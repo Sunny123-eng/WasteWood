@@ -1,11 +1,38 @@
 import SawmillList from '@/components/master/SawmillList';
 import PartyList from '@/components/master/PartyList';
 import { Separator } from '@/components/ui/separator';
+import { useNavigate } from 'react-router-dom';
+import { Card, CardContent } from '@/components/ui/card';
+import { ArrowDownLeft, ArrowUpRight, Clock, FileText, CreditCard } from 'lucide-react';
+
+const quickLinks = [
+  { label: 'Payment Received', icon: ArrowDownLeft, path: '/payment-received', color: 'text-success' },
+  { label: 'Payment Made', icon: ArrowUpRight, path: '/payment-made', color: 'text-destructive' },
+  { label: 'Outstanding', icon: CreditCard, path: '/outstanding', color: 'text-primary' },
+  { label: 'History', icon: Clock, path: '/history', color: 'text-accent' },
+];
 
 export default function Settings() {
+  const navigate = useNavigate();
+
   return (
     <div className="p-4 space-y-6">
-      <h1 className="text-xl font-bold">Settings & Master Data</h1>
+      <h1 className="text-xl font-bold">Settings & More</h1>
+
+      <div className="grid grid-cols-2 gap-3">
+        {quickLinks.map(({ label, icon: Icon, path, color }) => (
+          <Card key={path} className="cursor-pointer active:scale-[0.98] transition-transform" onClick={() => navigate(path)}>
+            <CardContent className="flex items-center gap-3 p-4">
+              <div className={`rounded-lg bg-muted p-2 ${color}`}>
+                <Icon className="h-5 w-5" />
+              </div>
+              <p className="text-sm font-medium">{label}</p>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      <Separator />
       <SawmillList />
       <Separator />
       <PartyList />

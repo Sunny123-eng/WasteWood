@@ -10,6 +10,10 @@ import Sale from "./pages/Sale";
 import Expense from "./pages/Expense";
 import Settings from "./pages/Settings";
 import History from "./pages/History";
+import PaymentReceived from "./pages/PaymentReceived";
+import PaymentMade from "./pages/PaymentMade";
+import Outstanding from "./pages/Outstanding";
+import Ledger from "./pages/Ledger";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -28,6 +32,10 @@ const App = () => (
             <Route path="/expense" element={<Expense />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/history" element={<History />} />
+            <Route path="/payment-received" element={<PaymentReceived />} />
+            <Route path="/payment-made" element={<PaymentMade />} />
+            <Route path="/outstanding" element={<Outstanding />} />
+            <Route path="/ledger/:type/:id" element={<Ledger />} />
           </Route>
           <Route path="*" element={<NotFound />} />
         </Routes>
