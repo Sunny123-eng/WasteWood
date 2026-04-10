@@ -3,13 +3,15 @@ import PartyList from '@/components/master/PartyList';
 import { Separator } from '@/components/ui/separator';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
-import { ArrowDownLeft, ArrowUpRight, Clock, FileText, CreditCard } from 'lucide-react';
+import { ArrowDownLeft, ArrowUpRight, Clock, CreditCard, Wallet, PieChart } from 'lucide-react';
 
 const quickLinks = [
   { label: 'Payment Received', icon: ArrowDownLeft, path: '/payment-received', color: 'text-success' },
   { label: 'Payment Made', icon: ArrowUpRight, path: '/payment-made', color: 'text-destructive' },
   { label: 'Outstanding', icon: CreditCard, path: '/outstanding', color: 'text-primary' },
   { label: 'History', icon: Clock, path: '/history', color: 'text-accent' },
+  { label: 'Withdrawals', icon: Wallet, path: '/withdrawals', color: 'text-warning' },
+  { label: 'Profit & Settlement', icon: PieChart, path: '/profit', color: 'text-primary' },
 ];
 
 export default function Settings() {

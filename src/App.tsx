@@ -14,6 +14,8 @@ import PaymentReceived from "./pages/PaymentReceived";
 import PaymentMade from "./pages/PaymentMade";
 import Outstanding from "./pages/Outstanding";
 import Ledger from "./pages/Ledger";
+import Withdrawals from "./pages/Withdrawals";
+import ProfitSettlement from "./pages/ProfitSettlement";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -36,6 +38,8 @@ const App = () => (
             <Route path="/payment-made" element={<PaymentMade />} />
             <Route path="/outstanding" element={<Outstanding />} />
             <Route path="/ledger/:type/:id" element={<Ledger />} />
+            <Route path="/withdrawals" element={<Withdrawals />} />
+            <Route path="/profit" element={<ProfitSettlement />} />
           </Route>
           <Route path="*" element={<NotFound />} />
         </Routes>
