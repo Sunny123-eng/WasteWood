@@ -55,6 +55,28 @@ export interface Expense {
   createdAt: string;
 }
 
+export interface PaymentReceived {
+  id: string;
+  date: string;
+  partyId: string;
+  partyName: string;
+  amount: number;
+  paymentMode: 'cash' | 'bank';
+  notes?: string;
+  createdAt: string;
+}
+
+export interface PaymentMade {
+  id: string;
+  date: string;
+  sawmillId: string;
+  sawmillName: string;
+  amount: number;
+  paymentMode: 'cash' | 'bank';
+  notes?: string;
+  createdAt: string;
+}
+
 export interface Balances {
   cash: number;
   bank: number;
