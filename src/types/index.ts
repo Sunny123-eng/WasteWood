@@ -82,6 +82,16 @@ export interface Balances {
   bank: number;
 }
 
+export interface Withdrawal {
+  id: string;
+  date: string;
+  person: 'sunny' | 'partner';
+  amount: number;
+  source: 'cash' | 'bank';
+  notes?: string;
+  createdAt: string;
+}
+
 export interface AppSettings {
   sunnyPercent: number;
   partnerPercent: number;
