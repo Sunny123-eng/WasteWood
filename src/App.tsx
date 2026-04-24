@@ -16,6 +16,7 @@ import Outstanding from "./pages/Outstanding";
 import Ledger from "./pages/Ledger";
 import Withdrawals from "./pages/Withdrawals";
 import ProfitSettlement from "./pages/ProfitSettlement";
+import DataManagement from "./pages/DataManagement";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -40,6 +41,7 @@ const App = () => (
             <Route path="/ledger/:type/:id" element={<Ledger />} />
             <Route path="/withdrawals" element={<Withdrawals />} />
             <Route path="/profit" element={<ProfitSettlement />} />
+            <Route path="/data" element={<DataManagement />} />
           </Route>
           <Route path="*" element={<NotFound />} />
         </Routes>
