@@ -1,18 +1,33 @@
 import { NavLink, Outlet } from 'react-router-dom';
-import { Home, ShoppingCart, TrendingUp, Receipt, Menu } from 'lucide-react';
+import { Home, ShoppingCart, TrendingUp, Receipt, Menu, LogOut, Shield, Eye } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/hooks/useAuth';
+import { Button } from '@/components/ui/button';
 
-const tabs = [
-  { to: '/', icon: Home, label: 'Home' },
-  { to: '/purchase', icon: ShoppingCart, label: 'Purchase' },
-  { to: '/sale', icon: TrendingUp, label: 'Sale' },
-  { to: '/expense', icon: Receipt, label: 'Expense' },
-  { to: '/settings', icon: Menu, label: 'More' },
+const allTabs = [
+  { to: '/', icon: Home, label: 'Home', always: true },
+  { to: '/purchase', icon: ShoppingCart, label: 'Purchase', adminOnly: true },
+  { to: '/sale', icon: TrendingUp, label: 'Sale', adminOnly: true },
+  { to: '/expense', icon: Receipt, label: 'Expense', adminOnly: true },
+  { to: '/settings', icon: Menu, label: 'More', always: true },
 ];
 
 export default function Layout() {
+  const { isAdmin, signOut, user } = useAuth();
+  const tabs = allTabs.filter(t => t.always || (t.adminOnly && isAdmin));
+
   return (
     <div className="flex min-h-screen flex-col bg-background">
+      <header className="sticky top-0 z-40 flex items-center justify-between border-b bg-card/95 px-3 py-2 backdrop-blur">
+        <div className="flex items-center gap-1.5 text-xs">
+          {isAdmin ? <Shield className="h-3.5 w-3.5 text-primary" /> : <Eye className="h-3.5 w-3.5 text-muted-foreground" />}
+          <span className="font-medium">{isAdmin ? 'Admin' : 'Viewer'}</span>
+          <span className="text-muted-foreground">· {user?.email}</span>
+        </div>
+        <Button size="sm" variant="ghost" onClick={signOut} className="h-7 px-2">
+          <LogOut className="h-3.5 w-3.5" />
+        </Button>
+      </header>
       <main className="flex-1 overflow-y-auto pb-20">
         <Outlet />
       </main>
