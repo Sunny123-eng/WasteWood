@@ -3,7 +3,10 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { AuthProvider } from "@/hooks/useAuth";
+import ProtectedRoute from "@/components/ProtectedRoute";
 import Layout from "@/components/Layout";
+import Auth from "./pages/Auth";
 import Index from "./pages/Index";
 import Purchase from "./pages/Purchase";
 import Sale from "./pages/Sale";
@@ -27,24 +30,27 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <Routes>
-          <Route element={<Layout />}>
-            <Route path="/" element={<Index />} />
-            <Route path="/purchase" element={<Purchase />} />
-            <Route path="/sale" element={<Sale />} />
-            <Route path="/expense" element={<Expense />} />
-            <Route path="/settings" element={<Settings />} />
-            <Route path="/history" element={<History />} />
-            <Route path="/payment-received" element={<PaymentReceived />} />
-            <Route path="/payment-made" element={<PaymentMade />} />
-            <Route path="/outstanding" element={<Outstanding />} />
-            <Route path="/ledger/:type/:id" element={<Ledger />} />
-            <Route path="/withdrawals" element={<Withdrawals />} />
-            <Route path="/profit" element={<ProfitSettlement />} />
-            <Route path="/data" element={<DataManagement />} />
-          </Route>
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+        <AuthProvider>
+          <Routes>
+            <Route path="/auth" element={<Auth />} />
+            <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
+              <Route path="/" element={<Index />} />
+              <Route path="/purchase" element={<ProtectedRoute adminOnly><Purchase /></ProtectedRoute>} />
+              <Route path="/sale" element={<ProtectedRoute adminOnly><Sale /></ProtectedRoute>} />
+              <Route path="/expense" element={<ProtectedRoute adminOnly><Expense /></ProtectedRoute>} />
+              <Route path="/settings" element={<Settings />} />
+              <Route path="/history" element={<History />} />
+              <Route path="/payment-received" element={<ProtectedRoute adminOnly><PaymentReceived /></ProtectedRoute>} />
+              <Route path="/payment-made" element={<ProtectedRoute adminOnly><PaymentMade /></ProtectedRoute>} />
+              <Route path="/outstanding" element={<Outstanding />} />
+              <Route path="/ledger/:type/:id" element={<Ledger />} />
+              <Route path="/withdrawals" element={<ProtectedRoute adminOnly><Withdrawals /></ProtectedRoute>} />
+              <Route path="/profit" element={<ProfitSettlement />} />
+              <Route path="/data" element={<ProtectedRoute adminOnly><DataManagement /></ProtectedRoute>} />
+            </Route>
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
