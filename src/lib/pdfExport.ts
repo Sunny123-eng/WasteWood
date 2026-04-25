@@ -1,7 +1,7 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { saveAs } from 'file-saver';
-import { formatINR } from './format';
+import { formatCurrency as formatINR } from './format';
 import type { ExportDataset } from './excelExport';
 
 export function exportDatasetToPdf(d: ExportDataset, title: string, filename?: string): void {
