@@ -28,6 +28,7 @@ export default function PaymentMadeForm() {
   const { items: sawmills } = useStore<Sawmill>('ww_sawmills');
   const { add } = useStore<PaymentMade>('ww_payments_made');
   const { items: purchases } = useStore<Purchase>('ww_purchases');
+  const { items: payments } = useStore<PaymentMade>('ww_payments_made');
   const { updateBalance } = useBalances();
 
   const form = useForm<FormValues>({
@@ -39,11 +40,10 @@ export default function PaymentMadeForm() {
 
   const outstanding = useMemo(() => {
     if (!selectedSawmillId) return 0;
-    const payments: PaymentMade[] = JSON.parse(localStorage.getItem('ww_payments_made') || '[]');
     const creditPurchases = purchases.filter(p => p.sawmillId === selectedSawmillId && p.paymentMode === 'credit').reduce((a, p) => a + p.amount, 0);
     const paid = payments.filter(p => p.sawmillId === selectedSawmillId).reduce((a, p) => a + p.amount, 0);
     return creditPurchases - paid;
-  }, [selectedSawmillId, purchases]);
+  }, [selectedSawmillId, purchases, payments]);
 
   function onSubmit(values: FormValues) {
     const sawmill = sawmills.find(s => s.id === values.sawmillId);

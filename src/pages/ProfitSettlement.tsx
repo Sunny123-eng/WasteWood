@@ -1,39 +1,41 @@
 import { useStore } from '@/hooks/useStore';
+import { useDataStore } from '@/hooks/useDataStore';
+import { useAuth } from '@/hooks/useAuth';
 import { formatCurrency } from '@/lib/format';
-import { getItem, setItem } from '@/lib/storage';
 import type { Purchase, Sale, Expense, Withdrawal, AppSettings } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
-
-const SETTINGS_KEY = 'ww_settings';
-const DEFAULT_SETTINGS: AppSettings = { sunnyPercent: 50, partnerPercent: 50 };
 
 export default function ProfitSettlement() {
   const { items: purchases } = useStore<Purchase>('ww_purchases');
   const { items: sales } = useStore<Sale>('ww_sales');
   const { items: expenses } = useStore<Expense>('ww_expenses');
   const { items: withdrawals } = useStore<Withdrawal>('ww_withdrawals');
+  const { settings, saveSettings } = useDataStore();
+  const { isAdmin } = useAuth();
 
-  const [settings, setSettings] = useState<AppSettings>(() => getItem(SETTINGS_KEY, DEFAULT_SETTINGS));
   const [sunnyInput, setSunnyInput] = useState(settings.sunnyPercent.toString());
   const [partnerInput, setPartnerInput] = useState(settings.partnerPercent.toString());
 
-  function saveSettings() {
+  useEffect(() => {
+    setSunnyInput(settings.sunnyPercent.toString());
+    setPartnerInput(settings.partnerPercent.toString());
+  }, [settings]);
+
+  async function handleSave() {
     const sunny = Number(sunnyInput);
     const partner = Number(partnerInput);
     if (sunny + partner !== 100) {
       toast.error('Percentages must add up to 100%');
       return;
     }
-    const next = { sunnyPercent: sunny, partnerPercent: partner };
-    setSettings(next);
-    setItem(SETTINGS_KEY, next);
-    toast.success('Profit split updated');
+    const ok = await saveSettings({ sunnyPercent: sunny, partnerPercent: partner });
+    if (ok) toast.success('Profit split updated');
   }
 
   const totals = useMemo(() => {
@@ -98,14 +100,14 @@ export default function ProfitSettlement() {
           <div className="grid grid-cols-2 gap-3">
             <div>
               <Label className="text-xs">Sunny %</Label>
-              <Input type="number" inputMode="numeric" value={sunnyInput} onChange={e => setSunnyInput(e.target.value)} />
+              <Input type="number" inputMode="numeric" value={sunnyInput} onChange={e => setSunnyInput(e.target.value)} disabled={!isAdmin} />
             </div>
             <div>
               <Label className="text-xs">Partner %</Label>
-              <Input type="number" inputMode="numeric" value={partnerInput} onChange={e => setPartnerInput(e.target.value)} />
+              <Input type="number" inputMode="numeric" value={partnerInput} onChange={e => setPartnerInput(e.target.value)} disabled={!isAdmin} />
             </div>
           </div>
-          <Button onClick={saveSettings} size="sm" className="w-full">Save Split</Button>
+          <Button onClick={handleSave} size="sm" className="w-full" disabled={!isAdmin}>Save Split</Button>
         </CardContent>
       </Card>
 

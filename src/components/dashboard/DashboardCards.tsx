@@ -1,9 +1,9 @@
 import { Card, CardContent } from '@/components/ui/card';
 import { useBalances } from '@/hooks/useBalances';
 import { useStore } from '@/hooks/useStore';
+import { useDataStore } from '@/hooks/useDataStore';
 import { formatCurrency, todayString } from '@/lib/format';
-import { getItem } from '@/lib/storage';
-import type { Purchase, Sale, Expense, PaymentReceived, PaymentMade, AppSettings } from '@/types';
+import type { Purchase, Sale, Expense, PaymentReceived, PaymentMade } from '@/types';
 import {
   Wallet, Landmark, ShoppingCart, TrendingUp, Receipt, CreditCard,
   IndianRupee, UserCircle2, Users,
@@ -18,6 +18,7 @@ export default function DashboardCards() {
   const { items: expenses } = useStore<Expense>('ww_expenses');
   const { items: paymentsReceived } = useStore<PaymentReceived>('ww_payments_received');
   const { items: paymentsMade } = useStore<PaymentMade>('ww_payments_made');
+  const { settings } = useDataStore();
   const navigate = useNavigate();
 
   const today = todayString();
@@ -30,7 +31,6 @@ export default function DashboardCards() {
   const totalExpenses = expenses.reduce((a, e) => a + e.amount, 0);
   const netProfit = totalSales - totalPurchases - totalExpenses;
 
-  const settings = getItem<AppSettings>('ww_settings', { sunnyPercent: 50, partnerPercent: 50 });
   const sunnyShare = netProfit * settings.sunnyPercent / 100;
   const partnerShare = netProfit * settings.partnerPercent / 100;
 

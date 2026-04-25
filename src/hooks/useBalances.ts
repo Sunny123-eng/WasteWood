@@ -1,27 +1,19 @@
-import { useState, useCallback } from 'react';
-import { getItem, setItem } from '@/lib/storage';
-import type { Balances } from '@/types';
-
-const KEY = 'ww_balances';
-const DEFAULT: Balances = { cash: 0, bank: 0 };
+/**
+ * Backwards-compatible balances hook backed by cloud store.
+ */
+import { useCallback } from 'react';
+import { useDataStore } from '@/hooks/useDataStore';
 
 export function useBalances() {
-  const [balances, setBalances] = useState<Balances>(() => getItem(KEY, DEFAULT));
-
-  const persist = useCallback((next: Balances) => {
-    setBalances(next);
-    setItem(KEY, next);
-  }, []);
+  const store = useDataStore();
 
   const updateBalance = useCallback((mode: 'cash' | 'bank', amount: number) => {
-    const current = getItem<Balances>(KEY, DEFAULT);
-    const next = { ...current, [mode]: current[mode] + amount };
-    persist(next);
-  }, [persist]);
+    void store.setBalance(mode, amount);
+  }, [store]);
 
   const refresh = useCallback(() => {
-    setBalances(getItem(KEY, DEFAULT));
-  }, []);
+    void store.refreshBalances();
+  }, [store]);
 
-  return { balances, updateBalance, refresh };
+  return { balances: store.balances, updateBalance, refresh };
 }
