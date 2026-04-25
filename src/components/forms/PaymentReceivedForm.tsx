@@ -28,6 +28,7 @@ export default function PaymentReceivedForm() {
   const { items: parties } = useStore<Party>('ww_parties');
   const { add } = useStore<PaymentReceived>('ww_payments_received');
   const { items: sales } = useStore<Sale>('ww_sales');
+  const { items: payments } = useStore<PaymentReceived>('ww_payments_received');
   const { updateBalance } = useBalances();
 
   const form = useForm<FormValues>({
@@ -39,11 +40,10 @@ export default function PaymentReceivedForm() {
 
   const outstanding = useMemo(() => {
     if (!selectedPartyId) return 0;
-    const { items: payments } = { items: JSON.parse(localStorage.getItem('ww_payments_received') || '[]') as PaymentReceived[] };
     const creditSales = sales.filter(s => s.partyId === selectedPartyId && s.paymentMode === 'credit').reduce((a, s) => a + s.amount, 0);
     const received = payments.filter(p => p.partyId === selectedPartyId).reduce((a, p) => a + p.amount, 0);
     return creditSales - received;
-  }, [selectedPartyId, sales]);
+  }, [selectedPartyId, sales, payments]);
 
   function onSubmit(values: FormValues) {
     const party = parties.find(p => p.id === values.partyId);
