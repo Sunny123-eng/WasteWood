@@ -100,14 +100,14 @@ export default function ProfitSettlement() {
           <div className="grid grid-cols-2 gap-3">
             <div>
               <Label className="text-xs">Sunny %</Label>
-              <Input type="number" inputMode="numeric" value={sunnyInput} onChange={e => setSunnyInput(e.target.value)} />
+              <Input type="number" inputMode="numeric" value={sunnyInput} onChange={e => setSunnyInput(e.target.value)} disabled={!isAdmin} />
             </div>
             <div>
               <Label className="text-xs">Partner %</Label>
-              <Input type="number" inputMode="numeric" value={partnerInput} onChange={e => setPartnerInput(e.target.value)} />
+              <Input type="number" inputMode="numeric" value={partnerInput} onChange={e => setPartnerInput(e.target.value)} disabled={!isAdmin} />
             </div>
           </div>
-          <Button onClick={saveSettings} size="sm" className="w-full">Save Split</Button>
+          <Button onClick={handleSave} size="sm" className="w-full" disabled={!isAdmin}>Save Split</Button>
         </CardContent>
       </Card>
 
