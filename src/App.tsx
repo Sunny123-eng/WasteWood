@@ -32,25 +32,27 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <AuthProvider>
-          <Routes>
-            <Route path="/auth" element={<Auth />} />
-            <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
-              <Route path="/" element={<Index />} />
-              <Route path="/purchase" element={<ProtectedRoute adminOnly><Purchase /></ProtectedRoute>} />
-              <Route path="/sale" element={<ProtectedRoute adminOnly><Sale /></ProtectedRoute>} />
-              <Route path="/expense" element={<ProtectedRoute adminOnly><Expense /></ProtectedRoute>} />
-              <Route path="/settings" element={<Settings />} />
-              <Route path="/history" element={<History />} />
-              <Route path="/payment-received" element={<ProtectedRoute adminOnly><PaymentReceived /></ProtectedRoute>} />
-              <Route path="/payment-made" element={<ProtectedRoute adminOnly><PaymentMade /></ProtectedRoute>} />
-              <Route path="/outstanding" element={<Outstanding />} />
-              <Route path="/ledger/:type/:id" element={<Ledger />} />
-              <Route path="/withdrawals" element={<ProtectedRoute adminOnly><Withdrawals /></ProtectedRoute>} />
-              <Route path="/profit" element={<ProfitSettlement />} />
-              <Route path="/data" element={<ProtectedRoute adminOnly><DataManagement /></ProtectedRoute>} />
-            </Route>
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+          <DataStoreProvider>
+            <Routes>
+              <Route path="/auth" element={<Auth />} />
+              <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
+                <Route path="/" element={<Index />} />
+                <Route path="/purchase" element={<ProtectedRoute adminOnly><Purchase /></ProtectedRoute>} />
+                <Route path="/sale" element={<ProtectedRoute adminOnly><Sale /></ProtectedRoute>} />
+                <Route path="/expense" element={<ProtectedRoute adminOnly><Expense /></ProtectedRoute>} />
+                <Route path="/settings" element={<Settings />} />
+                <Route path="/history" element={<History />} />
+                <Route path="/payment-received" element={<ProtectedRoute adminOnly><PaymentReceived /></ProtectedRoute>} />
+                <Route path="/payment-made" element={<ProtectedRoute adminOnly><PaymentMade /></ProtectedRoute>} />
+                <Route path="/outstanding" element={<Outstanding />} />
+                <Route path="/ledger/:type/:id" element={<Ledger />} />
+                <Route path="/withdrawals" element={<ProtectedRoute adminOnly><Withdrawals /></ProtectedRoute>} />
+                <Route path="/profit" element={<ProfitSettlement />} />
+                <Route path="/data" element={<ProtectedRoute adminOnly><DataManagement /></ProtectedRoute>} />
+              </Route>
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </DataStoreProvider>
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
