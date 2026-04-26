@@ -8,6 +8,7 @@ import type { Expense, Sale, Purchase } from '@/types';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import { useMemo } from 'react';
@@ -16,6 +17,8 @@ const schema = z.object({
   date: z.string().min(1, 'Required'),
   description: z.string().min(1, 'Required'),
   amount: z.coerce.number().positive('Must be > 0'),
+  paidBy: z.enum(['business', 'sunny', 'partner']),
+  paymentMode: z.enum(['cash', 'bank']),
   linkedVehicle: z.string().optional(),
 });
 
@@ -38,7 +41,7 @@ export default function ExpenseForm() {
 
   const form = useForm<FormData>({
     resolver: zodResolver(schema),
-    defaultValues: { date: todayString(), description: '', amount: 0, linkedVehicle: '' },
+    defaultValues: { date: todayString(), description: '', amount: 0, paidBy: 'business', paymentMode: 'cash', linkedVehicle: '' },
   });
 
   function onSubmit(data: FormData) {
@@ -46,11 +49,13 @@ export default function ExpenseForm() {
       date: data.date,
       description: data.description,
       amount: data.amount,
-      paidBy: 'business',
-      paymentMode: 'cash',
+      paidBy: data.paidBy,
+      paymentMode: data.paymentMode,
       linkedVehicle: data.linkedVehicle,
     });
-    updateBalance('cash', -data.amount);
+    if (data.paidBy === 'business') {
+      updateBalance(data.paymentMode, -data.amount);
+    }
     toast.success('Expense saved!');
     navigate('/');
   }
@@ -70,6 +75,32 @@ export default function ExpenseForm() {
           <FormItem><FormLabel>Amount (₹)</FormLabel><FormControl><Input type="number" step="0.01" {...field} /></FormControl><FormMessage /></FormItem>
         )} />
 
+        <div className="grid grid-cols-2 gap-3">
+          <FormField control={form.control} name="paidBy" render={({ field }) => (
+            <FormItem><FormLabel>Paid By</FormLabel>
+              <Select onValueChange={field.onChange} value={field.value}>
+                <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                <SelectContent>
+                  <SelectItem value="business">Business</SelectItem>
+                  <SelectItem value="sunny">Sunny</SelectItem>
+                  <SelectItem value="partner">Partner</SelectItem>
+                </SelectContent>
+              </Select><FormMessage />
+            </FormItem>
+          )} />
+          <FormField control={form.control} name="paymentMode" render={({ field }) => (
+            <FormItem><FormLabel>Payment Mode</FormLabel>
+              <Select onValueChange={field.onChange} value={field.value}>
+                <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                <SelectContent>
+                  <SelectItem value="cash">Cash</SelectItem>
+                  <SelectItem value="bank">Bank</SelectItem>
+                </SelectContent>
+              </Select><FormMessage />
+            </FormItem>
+          )} />
+        </div>
+
         <FormField control={form.control} name="linkedVehicle" render={({ field }) => (
           <FormItem>
             <FormLabel>Linked Vehicle (Optional)</FormLabel>
@@ -82,10 +113,6 @@ export default function ExpenseForm() {
             <FormMessage />
           </FormItem>
         )} />
-
-        <div className="rounded-lg border border-dashed p-3 text-center text-xs text-muted-foreground">
-          Paid By aur Payment Mode "Payment Made/Withdrawal" screen pe set hota hai. Yahaan default Business / Cash maan liya gaya hai. Edit option se baad mein badal sakte hain.
-        </div>
 
         <Button type="submit" className="w-full" size="lg">Save Expense</Button>
       </form>
