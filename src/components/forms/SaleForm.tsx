@@ -2,9 +2,8 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useStore } from '@/hooks/useStore';
-import { useBalances } from '@/hooks/useBalances';
 import { todayString } from '@/lib/format';
-import type { Party, Sale } from '@/types';
+import type { Party, Sale, Purchase, Expense } from '@/types';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -12,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
+import { useMemo } from 'react';
 
 const schema = z.object({
   date: z.string().min(1, 'Required'),
@@ -20,7 +20,6 @@ const schema = z.object({
   quantity: z.coerce.number().positive('Must be > 0'),
   vehicleNumber: z.string().min(1, 'Required'),
   billNumber: z.string().min(1, 'Bill number is mandatory'),
-  paymentMode: z.enum(['cash', 'bank', 'credit']),
   notes: z.string().optional(),
 });
 
@@ -28,13 +27,22 @@ type FormData = z.infer<typeof schema>;
 
 export default function SaleForm() {
   const { items: parties } = useStore<Party>('ww_parties');
-  const { add } = useStore<Sale>('ww_sales');
-  const { updateBalance } = useBalances();
+  const { items: sales, add } = useStore<Sale>('ww_sales');
+  const { items: purchases } = useStore<Purchase>('ww_purchases');
+  const { items: expenses } = useStore<Expense>('ww_expenses');
   const navigate = useNavigate();
+
+  const vehicleSuggestions = useMemo(() => {
+    const set = new Set<string>();
+    sales.forEach(s => s.vehicleNumber && set.add(s.vehicleNumber));
+    purchases.forEach(p => p.vehicleNumber && set.add(p.vehicleNumber));
+    expenses.forEach(e => e.linkedVehicle && set.add(e.linkedVehicle));
+    return Array.from(set);
+  }, [sales, purchases, expenses]);
 
   const form = useForm<FormData>({
     resolver: zodResolver(schema),
-    defaultValues: { date: todayString(), partyId: '', rate: 0, quantity: 0, vehicleNumber: '', billNumber: '', paymentMode: 'cash', notes: '' },
+    defaultValues: { date: todayString(), partyId: '', rate: 0, quantity: 0, vehicleNumber: '', billNumber: '', notes: '' },
   });
 
   const rate = form.watch('rate');
@@ -52,13 +60,10 @@ export default function SaleForm() {
       amount,
       vehicleNumber: data.vehicleNumber,
       billNumber: data.billNumber,
-      paymentMode: data.paymentMode,
+      paymentMode: 'credit',
       notes: data.notes,
     });
-    if (data.paymentMode !== 'credit') {
-      updateBalance(data.paymentMode, amount);
-    }
-    toast.success('Sale saved!');
+    toast.success('Sale saved as Credit (Udhaar)!');
     navigate('/');
   }
 
@@ -93,29 +98,29 @@ export default function SaleForm() {
         </div>
 
         <FormField control={form.control} name="vehicleNumber" render={({ field }) => (
-          <FormItem><FormLabel>Vehicle / Gadi Number</FormLabel><FormControl><Input placeholder="e.g. MH 12 AB 1234" {...field} /></FormControl><FormMessage /></FormItem>
+          <FormItem>
+            <FormLabel>Vehicle / Gadi Number</FormLabel>
+            <FormControl>
+              <Input list="vehicle-suggestions" placeholder="e.g. MH 12 AB 1234" {...field} />
+            </FormControl>
+            <datalist id="vehicle-suggestions">
+              {vehicleSuggestions.map(v => <option key={v} value={v} />)}
+            </datalist>
+            <FormMessage />
+          </FormItem>
         )} />
 
         <FormField control={form.control} name="billNumber" render={({ field }) => (
           <FormItem><FormLabel>Bill Number</FormLabel><FormControl><Input placeholder="Bill #" {...field} /></FormControl><FormMessage /></FormItem>
         )} />
 
-        <FormField control={form.control} name="paymentMode" render={({ field }) => (
-          <FormItem><FormLabel>Payment Mode</FormLabel>
-            <Select onValueChange={field.onChange} value={field.value}>
-              <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
-              <SelectContent>
-                <SelectItem value="cash">Cash</SelectItem>
-                <SelectItem value="bank">Bank</SelectItem>
-                <SelectItem value="credit">Credit (Udhaar)</SelectItem>
-              </SelectContent>
-            </Select><FormMessage />
-          </FormItem>
-        )} />
-
         <FormField control={form.control} name="notes" render={({ field }) => (
           <FormItem><FormLabel>Notes</FormLabel><FormControl><Textarea placeholder="Optional notes..." {...field} /></FormControl><FormMessage /></FormItem>
         )} />
+
+        <div className="rounded-lg border border-dashed p-3 text-center text-xs text-muted-foreground">
+          Entry Credit (Udhaar) ke roop mein save hogi. Payment milne par "Payment Received" se settle karein.
+        </div>
 
         <Button type="submit" className="w-full" size="lg">Save Sale</Button>
       </form>
