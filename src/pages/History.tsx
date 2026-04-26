@@ -8,110 +8,17 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import {
-  Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle,
-} from '@/components/ui/dialog';
 import { Pencil, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
+import EditTransactionDialog from '@/components/history/EditTransactionDialog';
 
 type AnyTxn = Purchase | Sale | Expense | PaymentReceived | PaymentMade | Withdrawal;
 type StoreKey = 'ww_purchases' | 'ww_sales' | 'ww_expenses' | 'ww_payments_received' | 'ww_payments_made' | 'ww_withdrawals';
 
-interface AdminActionsProps<T extends AnyTxn> {
-  item: T;
-  storeKey: StoreKey;
-  /** Reverse the cash/bank effect of the original transaction. */
-  onReverseBalance: (item: T) => void;
-}
-
-function AdminActions<T extends AnyTxn>({ item, storeKey, onReverseBalance }: AdminActionsProps<T>) {
-  const { isAdmin } = useAuth();
-  const { update, remove } = useStore<T>(storeKey);
-  const [editing, setEditing] = useState(false);
-  const [date, setDate] = useState(item.date);
-  const [amount, setAmount] = useState(String((item as { amount: number }).amount));
-
-  if (!isAdmin) return null;
-
-  async function handleDelete() {
-    onReverseBalance(item);
-    const ok = await remove(item.id);
-    if (ok) toast.success('Deleted & balance reversed');
-  }
-
-  async function handleSave() {
-    const newAmt = Number(amount);
-    if (!newAmt || newAmt <= 0) { toast.error('Invalid amount'); return; }
-    const oldAmt = (item as { amount: number }).amount;
-    const diff = newAmt - oldAmt;
-    if (diff !== 0) {
-      // Adjust balance for the difference, in same direction as original txn.
-      onReverseBalance({ ...item, amount: -diff } as T);
-    }
-    const ok = await update(item.id, { date, amount: newAmt } as Partial<T>);
-    if (ok) { toast.success('Updated'); setEditing(false); }
-  }
-
-  return (
-    <div className="flex gap-1">
-      <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setEditing(true)}>
-        <Pencil className="h-3.5 w-3.5" />
-      </Button>
-      <AlertDialog>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete this entry?</AlertDialogTitle>
-            <AlertDialogDescription>
-              The cash/bank balance change from this transaction will be reversed automatically.
-              This cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-              Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-        <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive"
-          onClick={(e) => { e.stopPropagation(); (e.currentTarget.previousElementSibling as HTMLElement | null)?.click?.(); }}>
-          <Trash2 className="h-3.5 w-3.5" />
-        </Button>
-      </AlertDialog>
-
-      <Dialog open={editing} onOpenChange={setEditing}>
-        <DialogContent>
-          <DialogHeader><DialogTitle>Edit entry</DialogTitle></DialogHeader>
-          <div className="space-y-3">
-            <div>
-              <Label className="text-xs">Date</Label>
-              <Input type="date" value={date} onChange={e => setDate(e.target.value)} />
-            </div>
-            <div>
-              <Label className="text-xs">Amount (₹)</Label>
-              <Input type="number" inputMode="numeric" value={amount} onChange={e => setAmount(e.target.value)} />
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Balance will adjust automatically if the amount changes.
-            </p>
-          </div>
-          <DialogFooter>
-            <Button variant="ghost" onClick={() => setEditing(false)}>Cancel</Button>
-            <Button onClick={handleSave}>Save</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </div>
-  );
-}
-
-// AlertDialog needs an explicit trigger — wrap simpler:
 function DeleteButton({ onConfirm }: { onConfirm: () => void }) {
   const [open, setOpen] = useState(false);
   return (
@@ -149,27 +56,13 @@ interface RowProps<T extends AnyTxn> {
 
 function RowShell<T extends AnyTxn>({ item, storeKey, onReverseBalance, children }: RowProps<T>) {
   const { isAdmin } = useAuth();
-  const { update, remove } = useStore<T>(storeKey);
+  const { remove } = useStore<T>(storeKey);
   const [editing, setEditing] = useState(false);
-  const [date, setDate] = useState(item.date);
-  const [amount, setAmount] = useState(String((item as { amount: number }).amount));
 
   async function handleDelete() {
     onReverseBalance(item);
     const ok = await remove(item.id);
     if (ok) toast.success('Deleted');
-  }
-
-  async function handleSave() {
-    const newAmt = Number(amount);
-    if (!newAmt || newAmt <= 0) { toast.error('Invalid amount'); return; }
-    const oldAmt = (item as { amount: number }).amount;
-    const diff = newAmt - oldAmt;
-    if (diff !== 0) {
-      onReverseBalance({ ...item, amount: -diff } as T);
-    }
-    const ok = await update(item.id, { date, amount: newAmt } as Partial<T>);
-    if (ok) { toast.success('Updated'); setEditing(false); }
   }
 
   return (
@@ -178,37 +71,21 @@ function RowShell<T extends AnyTxn>({ item, storeKey, onReverseBalance, children
         {children}
         {isAdmin && (
           <div className="mt-2 flex justify-end gap-1 border-t pt-2">
-            <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => {
-              setDate(item.date);
-              setAmount(String((item as { amount: number }).amount));
-              setEditing(true);
-            }}>
+            <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setEditing(true)}>
               <Pencil className="h-3.5 w-3.5" />
             </Button>
             <DeleteButton onConfirm={handleDelete} />
           </div>
         )}
       </CardContent>
-      <Dialog open={editing} onOpenChange={setEditing}>
-        <DialogContent>
-          <DialogHeader><DialogTitle>Edit entry</DialogTitle></DialogHeader>
-          <div className="space-y-3">
-            <div>
-              <Label className="text-xs">Date</Label>
-              <Input type="date" value={date} onChange={e => setDate(e.target.value)} />
-            </div>
-            <div>
-              <Label className="text-xs">Amount (₹)</Label>
-              <Input type="number" inputMode="numeric" value={amount} onChange={e => setAmount(e.target.value)} />
-            </div>
-            <p className="text-xs text-muted-foreground">Balance adjusts automatically if the amount changes.</p>
-          </div>
-          <DialogFooter>
-            <Button variant="ghost" onClick={() => setEditing(false)}>Cancel</Button>
-            <Button onClick={handleSave}>Save</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {editing && (
+        <EditTransactionDialog
+          open={editing}
+          onOpenChange={setEditing}
+          item={item}
+          storeKey={storeKey}
+        />
+      )}
     </Card>
   );
 }
