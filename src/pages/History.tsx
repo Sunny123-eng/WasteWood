@@ -19,6 +19,7 @@ import {
 } from '@/components/ui/dialog';
 import { Pencil, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
+import EditTransactionDialog from '@/components/history/EditTransactionDialog';
 
 type AnyTxn = Purchase | Sale | Expense | PaymentReceived | PaymentMade | Withdrawal;
 type StoreKey = 'ww_purchases' | 'ww_sales' | 'ww_expenses' | 'ww_payments_received' | 'ww_payments_made' | 'ww_withdrawals';
