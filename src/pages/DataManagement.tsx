@@ -7,6 +7,7 @@ import { exportBackup, importBackup, clearAllData } from '@/lib/backup';
 import { closeMonth, fetchExportDataset, listArchives, downloadArchive } from '@/lib/closeMonth';
 import { toast } from '@/hooks/use-toast';
 import { Download, Upload, FileSpreadsheet, FileText, Trash2, Archive, CalendarCheck } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader,
