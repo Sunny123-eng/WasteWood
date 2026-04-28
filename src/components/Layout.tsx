@@ -1,5 +1,5 @@
 import { NavLink, Outlet } from 'react-router-dom';
-import { Home, ShoppingCart, TrendingUp, Receipt, Menu, LogOut, Shield, Eye } from 'lucide-react';
+import { Home, ShoppingCart, TrendingUp, Receipt, Menu, LogOut, Shield, Eye, Crown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
@@ -13,18 +13,22 @@ const allTabs = [
 ];
 
 export default function Layout() {
-  const { isAdmin, signOut, user } = useAuth();
+  const { isAdmin, isSuperAdmin, isBusinessUser, signOut, user, business } = useAuth();
   const tabs = allTabs.filter(t => t.always || (t.adminOnly && isAdmin));
+
+  const RoleIcon = isSuperAdmin ? Crown : isAdmin ? Shield : Eye;
+  const roleLabel = isSuperAdmin ? 'Super Admin' : isAdmin ? 'Admin' : isBusinessUser ? 'User' : '';
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
       <header className="sticky top-0 z-40 flex items-center justify-between border-b bg-card/95 px-3 py-2 backdrop-blur">
-        <div className="flex items-center gap-1.5 text-xs">
-          {isAdmin ? <Shield className="h-3.5 w-3.5 text-primary" /> : <Eye className="h-3.5 w-3.5 text-muted-foreground" />}
-          <span className="font-medium">{isAdmin ? 'Admin' : 'Viewer'}</span>
-          <span className="text-muted-foreground">· {user?.email}</span>
+        <div className="flex items-center gap-1.5 text-xs min-w-0">
+          <RoleIcon className={`h-3.5 w-3.5 shrink-0 ${isSuperAdmin ? 'text-warning' : isAdmin ? 'text-primary' : 'text-muted-foreground'}`} />
+          <span className="font-medium shrink-0">{roleLabel}</span>
+          {business && <span className="text-muted-foreground truncate">· {business.name}</span>}
+          {!business && <span className="text-muted-foreground truncate">· {user?.email}</span>}
         </div>
-        <Button size="sm" variant="ghost" onClick={signOut} className="h-7 px-2">
+        <Button size="sm" variant="ghost" onClick={signOut} className="h-7 px-2 shrink-0">
           <LogOut className="h-3.5 w-3.5" />
         </Button>
       </header>
