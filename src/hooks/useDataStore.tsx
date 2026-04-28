@@ -1,10 +1,14 @@
 /**
- * Central cloud data store. Loads all tables once after auth, keeps them
- * in memory, and re-fetches the affected table on each mutation. Exposes
- * a per-table API matching the old `useStore` shape so existing pages
- * keep working with minimal edits.
+ * Central cloud data store — multi-tenant aware.
  *
- * Mutation gating: any add/update/remove is rejected for non-admins.
+ * Every read is automatically scoped to the user's current business by RLS.
+ * Every write injects the user's `business_id`. Super-admins (no business
+ * membership) can read all businesses' data but cannot mutate.
+ *
+ * Mutation gating:
+ *   - business_admin: full add/update/remove
+ *   - business_user: only add (insert) — no update/remove
+ *   - super_admin: nothing (read-only monitor)
  */
 import { createContext, useContext, useEffect, useState, useCallback, ReactNode, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
@@ -30,8 +34,18 @@ const KEY_TO_TABLE: Record<StoreKey, string> = {
   ww_withdrawals: 'withdrawals',
 };
 
-// Maps app/camelCase fields <-> DB/snake_case fields per table.
-type FieldMap = Record<string, string>; // appKey -> dbKey
+// Tables where business_user role is allowed to insert (transactions only)
+const USER_INSERTABLE: Set<StoreKey> = new Set([
+  'ww_purchases', 'ww_sales', 'ww_expenses',
+  'ww_payments_received', 'ww_payments_made',
+]);
+
+// Tables that require business_admin (master data, withdrawals)
+const ADMIN_ONLY_INSERT: Set<StoreKey> = new Set([
+  'ww_sawmills', 'ww_parties', 'ww_withdrawals',
+]);
+
+type FieldMap = Record<string, string>;
 const FIELD_MAPS: Record<StoreKey, FieldMap> = {
   ww_sawmills: { defaultRate: 'default_rate', createdAt: 'created_at' },
   ww_parties: { createdAt: 'created_at' },
@@ -117,7 +131,7 @@ const EMPTY: DataState = {
 };
 
 export function DataStoreProvider({ children }: { children: ReactNode }) {
-  const { session, isAdmin, loading: authLoading } = useAuth();
+  const { session, currentBusinessId, isBusinessAdmin, isBusinessUser, loading: authLoading } = useAuth();
   const [state, setState] = useState<DataState>(EMPTY);
 
   const fetchTable = useCallback(async (key: StoreKey) => {
@@ -135,14 +149,16 @@ export function DataStoreProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const refreshBalances = useCallback(async () => {
-    const { data } = await supabase.from('balances').select('cash,bank').eq('id', 1).maybeSingle();
-    if (data) setState(s => ({ ...s, balances: { cash: Number(data.cash), bank: Number(data.bank) } }));
-  }, []);
+    if (!currentBusinessId) return;
+    const { data } = await supabase.from('balances').select('cash,bank').eq('business_id', currentBusinessId).maybeSingle();
+    setState(s => ({ ...s, balances: { cash: Number(data?.cash ?? 0), bank: Number(data?.bank ?? 0) } }));
+  }, [currentBusinessId]);
 
   const refreshSettings = useCallback(async () => {
-    const { data } = await supabase.from('settings').select('sunny_pct,partner_pct').eq('id', 1).maybeSingle();
+    if (!currentBusinessId) return;
+    const { data } = await supabase.from('settings').select('sunny_pct,partner_pct').eq('business_id', currentBusinessId).maybeSingle();
     if (data) setState(s => ({ ...s, settings: { sunnyPercent: Number(data.sunny_pct), partnerPercent: Number(data.partner_pct) } }));
-  }, []);
+  }, [currentBusinessId]);
 
   const loadAll = useCallback(async () => {
     setState(s => ({ ...s, loading: true }));
@@ -158,20 +174,38 @@ export function DataStoreProvider({ children }: { children: ReactNode }) {
     if (authLoading) return;
     if (!session) { setState(EMPTY); return; }
     loadAll();
-  }, [session, authLoading, loadAll]);
+  }, [session, authLoading, currentBusinessId, loadAll]);
 
-  const guardAdmin = useCallback((action: string): boolean => {
-    if (!isAdmin) {
-      toast.error(`Only admins can ${action}`);
+  const guardWrite = useCallback((key: StoreKey, action: 'insert' | 'modify'): boolean => {
+    if (!currentBusinessId) {
+      toast.error('No business selected');
       return false;
     }
+    if (action === 'modify' && !isBusinessAdmin) {
+      toast.error('Only business admin can edit/delete');
+      return false;
+    }
+    if (action === 'insert') {
+      if (ADMIN_ONLY_INSERT.has(key) && !isBusinessAdmin) {
+        toast.error('Only business admin can add this');
+        return false;
+      }
+      if (!isBusinessAdmin && !isBusinessUser) {
+        toast.error('Read-only access');
+        return false;
+      }
+      if (!USER_INSERTABLE.has(key) && !isBusinessAdmin) {
+        toast.error('Only business admin can add this');
+        return false;
+      }
+    }
     return true;
-  }, [isAdmin]);
+  }, [currentBusinessId, isBusinessAdmin, isBusinessUser]);
 
   const addItem = useCallback(async <T,>(key: StoreKey, item: Record<string, unknown>): Promise<T | null> => {
-    if (!guardAdmin('add records')) return null;
+    if (!guardWrite(key, 'insert')) return null;
     const table = KEY_TO_TABLE[key];
-    const dbRow = toDb(key, item);
+    const dbRow = { ...toDb(key, item), business_id: currentBusinessId };
     const { data, error } = await supabase
       .from(table as never)
       .insert(dbRow as never)
@@ -180,10 +214,10 @@ export function DataStoreProvider({ children }: { children: ReactNode }) {
     if (error) { toast.error(error.message); return null; }
     await fetchTable(key);
     return fromDb(key, data as Record<string, unknown>) as T;
-  }, [guardAdmin, fetchTable]);
+  }, [guardWrite, currentBusinessId, fetchTable]);
 
   const updateItem = useCallback(async (key: StoreKey, id: string, patch: Record<string, unknown>): Promise<boolean> => {
-    if (!guardAdmin('edit records')) return false;
+    if (!guardWrite(key, 'modify')) return false;
     const table = KEY_TO_TABLE[key];
     const dbPatch = toDb(key, patch);
     const { error } = await supabase
@@ -193,37 +227,55 @@ export function DataStoreProvider({ children }: { children: ReactNode }) {
     if (error) { toast.error(error.message); return false; }
     await fetchTable(key);
     return true;
-  }, [guardAdmin, fetchTable]);
+  }, [guardWrite, fetchTable]);
 
   const removeItem = useCallback(async (key: StoreKey, id: string): Promise<boolean> => {
-    if (!guardAdmin('delete records')) return false;
+    if (!guardWrite(key, 'modify')) return false;
     const table = KEY_TO_TABLE[key];
     const { error } = await supabase.from(table as never).delete().eq('id', id);
     if (error) { toast.error(error.message); return false; }
     await fetchTable(key);
     return true;
-  }, [guardAdmin, fetchTable]);
+  }, [guardWrite, fetchTable]);
 
   const setBalance = useCallback(async (mode: 'cash' | 'bank', delta: number) => {
-    if (!isAdmin) return;
-    const { data: cur } = await supabase.from('balances').select('cash,bank').eq('id', 1).maybeSingle();
+    if (!isBusinessAdmin || !currentBusinessId) return;
+    const { data: cur } = await supabase.from('balances').select('cash,bank').eq('business_id', currentBusinessId).maybeSingle();
     const next = { cash: Number(cur?.cash ?? 0), bank: Number(cur?.bank ?? 0) };
     next[mode] += delta;
-    const { error } = await supabase.from('balances').update({ cash: next.cash, bank: next.bank, updated_at: new Date().toISOString() }).eq('id', 1);
-    if (error) { toast.error(error.message); return; }
+    if (cur) {
+      const { error } = await supabase.from('balances').update({ cash: next.cash, bank: next.bank, updated_at: new Date().toISOString() }).eq('business_id', currentBusinessId);
+      if (error) { toast.error(error.message); return; }
+    } else {
+      const { error } = await supabase.from('balances').insert({ business_id: currentBusinessId, cash: next.cash, bank: next.bank });
+      if (error) { toast.error(error.message); return; }
+    }
     setState(s => ({ ...s, balances: next }));
-  }, [isAdmin]);
+  }, [isBusinessAdmin, currentBusinessId]);
 
   const saveSettings = useCallback(async (next: AppSettings): Promise<boolean> => {
-    if (!guardAdmin('change settings')) return false;
-    const { error } = await supabase.from('settings').update({
-      sunny_pct: next.sunnyPercent, partner_pct: next.partnerPercent,
-      updated_at: new Date().toISOString(),
-    }).eq('id', 1);
-    if (error) { toast.error(error.message); return false; }
+    if (!isBusinessAdmin || !currentBusinessId) {
+      toast.error('Only business admin can change settings');
+      return false;
+    }
+    const { data: existing } = await supabase.from('settings').select('business_id').eq('business_id', currentBusinessId).maybeSingle();
+    if (existing) {
+      const { error } = await supabase.from('settings').update({
+        sunny_pct: next.sunnyPercent, partner_pct: next.partnerPercent,
+        updated_at: new Date().toISOString(),
+      }).eq('business_id', currentBusinessId);
+      if (error) { toast.error(error.message); return false; }
+    } else {
+      const { error } = await supabase.from('settings').insert({
+        business_id: currentBusinessId,
+        sunny_pct: next.sunnyPercent, partner_pct: next.partnerPercent,
+        default_expense_paid_by: 'business',
+      });
+      if (error) { toast.error(error.message); return false; }
+    }
     setState(s => ({ ...s, settings: next }));
     return true;
-  }, [guardAdmin]);
+  }, [isBusinessAdmin, currentBusinessId]);
 
   const value = useMemo<DataCtx>(() => ({
     ...state,
