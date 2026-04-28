@@ -23,6 +23,7 @@ interface ArchiveRow {
 }
 
 export default function DataManagement() {
+  const { currentBusinessId: bid } = useAuth();
   const fileRef = useRef<HTMLInputElement>(null);
   const [importing, setImporting] = useState(false);
   const [working, setWorking] = useState<string | null>(null);
