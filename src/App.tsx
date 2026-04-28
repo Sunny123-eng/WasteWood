@@ -18,6 +18,7 @@ import PaymentReceived from "./pages/PaymentReceived";
 import PaymentMade from "./pages/PaymentMade";
 import Outstanding from "./pages/Outstanding";
 import Ledger from "./pages/Ledger";
+import Ledgers from "./pages/Ledgers";
 import Withdrawals from "./pages/Withdrawals";
 import ProfitSettlement from "./pages/ProfitSettlement";
 import VehicleProfit from "./pages/VehicleProfit";
@@ -47,6 +48,7 @@ const App = () => (
                 <Route path="/payment-made" element={<ProtectedRoute adminOnly><PaymentMade /></ProtectedRoute>} />
                 <Route path="/outstanding" element={<Outstanding />} />
                 <Route path="/ledger/:type/:id" element={<Ledger />} />
+                <Route path="/ledgers" element={<Ledgers />} />
                 <Route path="/withdrawals" element={<ProtectedRoute adminOnly><Withdrawals /></ProtectedRoute>} />
                 <Route path="/profit" element={<ProfitSettlement />} />
                 <Route path="/vehicle-profit" element={<VehicleProfit />} />
