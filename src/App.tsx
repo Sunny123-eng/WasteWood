@@ -20,6 +20,7 @@ import Outstanding from "./pages/Outstanding";
 import Ledger from "./pages/Ledger";
 import Withdrawals from "./pages/Withdrawals";
 import ProfitSettlement from "./pages/ProfitSettlement";
+import VehicleProfit from "./pages/VehicleProfit";
 import DataManagement from "./pages/DataManagement";
 import NotFound from "./pages/NotFound";
 
@@ -48,6 +49,7 @@ const App = () => (
                 <Route path="/ledger/:type/:id" element={<Ledger />} />
                 <Route path="/withdrawals" element={<ProtectedRoute adminOnly><Withdrawals /></ProtectedRoute>} />
                 <Route path="/profit" element={<ProfitSettlement />} />
+                <Route path="/vehicle-profit" element={<VehicleProfit />} />
                 <Route path="/data" element={<ProtectedRoute adminOnly><DataManagement /></ProtectedRoute>} />
               </Route>
               <Route path="*" element={<NotFound />} />
