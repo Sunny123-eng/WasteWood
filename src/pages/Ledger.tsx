@@ -75,6 +75,24 @@ export default function Ledger() {
     return { debit: totalDebit, credit: totalCredit, balance: isParty ? totalDebit - totalCredit : totalCredit - totalDebit };
   }, [ledgerEntries, isParty]);
 
+  // Payment breakdown by mode (cash/bank)
+  const paymentBreakdown = useMemo(() => {
+    if (isParty) {
+      const list = paymentsReceived.filter(p => p.partyId === id);
+      return {
+        cash: list.filter(p => p.paymentMode === 'cash').reduce((a, p) => a + p.amount, 0),
+        bank: list.filter(p => p.paymentMode === 'bank').reduce((a, p) => a + p.amount, 0),
+        total: list.reduce((a, p) => a + p.amount, 0),
+      };
+    }
+    const list = paymentsMade.filter(p => p.sawmillId === id);
+    return {
+      cash: list.filter(p => p.paymentMode === 'cash').reduce((a, p) => a + p.amount, 0),
+      bank: list.filter(p => p.paymentMode === 'bank').reduce((a, p) => a + p.amount, 0),
+      total: list.reduce((a, p) => a + p.amount, 0),
+    };
+  }, [isParty, id, paymentsReceived, paymentsMade]);
+
   // For parties: totalQty from sales; for sawmills: from purchases
   const totalQty = isParty
     ? sales.filter(s => s.partyId === id).reduce((a, s) => a + s.quantity, 0)
@@ -89,22 +107,39 @@ export default function Ledger() {
       <h1 className="mb-1 text-xl font-bold">{name}</h1>
       <p className="mb-4 text-sm text-muted-foreground">{isParty ? 'Party' : 'Sawmill'} Ledger</p>
 
-      <div className="grid grid-cols-3 gap-2 mb-4">
+      <div className="grid grid-cols-3 gap-2 mb-3">
         <Card><CardContent className="p-3 text-center">
           <p className="text-[10px] text-muted-foreground">Total Qty</p>
           <p className="text-sm font-bold">{totalQty.toLocaleString('en-IN')} KG</p>
         </CardContent></Card>
         <Card><CardContent className="p-3 text-center">
-          <p className="text-[10px] text-muted-foreground">Total Amount</p>
+          <p className="text-[10px] text-muted-foreground">Total {isParty ? 'Sales' : 'Purchase'}</p>
           <p className="text-sm font-bold">{formatCurrency(totalAmount)}</p>
         </CardContent></Card>
         <Card><CardContent className="p-3 text-center">
-          <p className="text-[10px] text-muted-foreground">Balance</p>
+          <p className="text-[10px] text-muted-foreground">{isParty ? 'To Receive' : 'To Pay'}</p>
           <p className={`text-sm font-bold ${totals.balance > 0 ? (isParty ? 'text-success' : 'text-destructive') : 'text-muted-foreground'}`}>
-            {formatCurrency(Math.abs(totals.balance))}
+            {totals.balance > 0 ? formatCurrency(totals.balance) : 'Settled'}
           </p>
         </CardContent></Card>
       </div>
+
+      <Card className="mb-4 border-primary/30 bg-primary/5">
+        <CardContent className="p-3 grid grid-cols-3 gap-2 text-center">
+          <div>
+            <p className="text-[10px] text-muted-foreground">{isParty ? 'Received Cash' : 'Paid Cash'}</p>
+            <p className="text-sm font-bold">{formatCurrency(paymentBreakdown.cash)}</p>
+          </div>
+          <div>
+            <p className="text-[10px] text-muted-foreground">{isParty ? 'Received Bank' : 'Paid Bank'}</p>
+            <p className="text-sm font-bold">{formatCurrency(paymentBreakdown.bank)}</p>
+          </div>
+          <div>
+            <p className="text-[10px] text-muted-foreground">Total Payments</p>
+            <p className="text-sm font-bold text-primary">{formatCurrency(paymentBreakdown.total)}</p>
+          </div>
+        </CardContent>
+      </Card>
 
       <div className="space-y-2">
         {ledgerEntries.length === 0 ? (
