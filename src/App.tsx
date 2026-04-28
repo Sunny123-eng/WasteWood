@@ -8,6 +8,7 @@ import { DataStoreProvider } from "@/hooks/useDataStore";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import Layout from "@/components/Layout";
 import Auth from "./pages/Auth";
+import Pending from "./pages/Pending";
 import Index from "./pages/Index";
 import Purchase from "./pages/Purchase";
 import Sale from "./pages/Sale";
@@ -23,6 +24,8 @@ import Withdrawals from "./pages/Withdrawals";
 import ProfitSettlement from "./pages/ProfitSettlement";
 import VehicleProfit from "./pages/VehicleProfit";
 import DataManagement from "./pages/DataManagement";
+import SuperAdminBusinesses from "./pages/SuperAdminBusinesses";
+import BusinessUsers from "./pages/BusinessUsers";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -37,6 +40,7 @@ const App = () => (
           <DataStoreProvider>
             <Routes>
               <Route path="/auth" element={<Auth />} />
+              <Route path="/pending" element={<Pending />} />
               <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
                 <Route path="/" element={<Index />} />
                 <Route path="/purchase" element={<ProtectedRoute adminOnly><Purchase /></ProtectedRoute>} />
@@ -53,6 +57,8 @@ const App = () => (
                 <Route path="/profit" element={<ProfitSettlement />} />
                 <Route path="/vehicle-profit" element={<VehicleProfit />} />
                 <Route path="/data" element={<ProtectedRoute adminOnly><DataManagement /></ProtectedRoute>} />
+                <Route path="/admin/businesses" element={<ProtectedRoute superAdminOnly><SuperAdminBusinesses /></ProtectedRoute>} />
+                <Route path="/business/users" element={<ProtectedRoute adminOnly><BusinessUsers /></ProtectedRoute>} />
               </Route>
               <Route path="*" element={<NotFound />} />
             </Routes>

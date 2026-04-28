@@ -35,14 +35,7 @@ export default function BusinessUsers() {
       .order('created_at', { ascending: true });
     const list = (data ?? []) as MemberRow[];
     setMembers(list);
-
-    // Look up emails (best-effort via RPC)
-    const emails: Record<string, string> = {};
-    for (const m of list) {
-      const { data: e } = await supabase.rpc('get_user_email' as never, { _user_id: m.user_id });
-      if (e) emails[m.user_id] = e as unknown as string;
-    }
-    setEmailMap(emails);
+    setEmailMap({});
     setLoading(false);
   };
 

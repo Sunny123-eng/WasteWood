@@ -3,7 +3,7 @@ import PartyList from '@/components/master/PartyList';
 import { Separator } from '@/components/ui/separator';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
-import { ArrowDownLeft, ArrowUpRight, Clock, CreditCard, Wallet, PieChart, Database, Truck, BookOpen } from 'lucide-react';
+import { ArrowDownLeft, ArrowUpRight, Clock, CreditCard, Wallet, PieChart, Database, Truck, BookOpen, Crown, Users } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 
 const quickLinks = [
@@ -15,13 +15,19 @@ const quickLinks = [
   { label: 'Withdrawals', icon: Wallet, path: '/withdrawals', color: 'text-warning', adminOnly: true },
   { label: 'Profit & Settlement', icon: PieChart, path: '/profit', color: 'text-primary' },
   { label: 'Vehicle Profit', icon: Truck, path: '/vehicle-profit', color: 'text-accent' },
+  { label: 'Manage Users', icon: Users, path: '/business/users', color: 'text-primary', adminOnly: true },
+  { label: 'All Businesses', icon: Crown, path: '/admin/businesses', color: 'text-warning', superAdminOnly: true },
   { label: 'Data & Backup', icon: Database, path: '/data', color: 'text-success', adminOnly: true },
 ];
 
 export default function Settings() {
   const navigate = useNavigate();
-  const { isAdmin } = useAuth();
-  const links = quickLinks.filter(l => !l.adminOnly || isAdmin);
+  const { isAdmin, isSuperAdmin } = useAuth();
+  const links = quickLinks.filter(l => {
+    if ((l as { superAdminOnly?: boolean }).superAdminOnly) return isSuperAdmin;
+    if (l.adminOnly) return isAdmin;
+    return true;
+  });
 
   return (
     <div className="p-4 space-y-6">
