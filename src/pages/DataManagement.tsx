@@ -31,7 +31,7 @@ export default function DataManagement() {
 
   const loadArchives = async () => {
     try {
-      const a = await listArchives();
+      const a = await listArchives(bid!);
       setArchives(a as ArchiveRow[]);
     } catch (e) {
       console.error(e);
@@ -48,7 +48,7 @@ export default function DataManagement() {
 
   const handleExcel = () => run('excel', async () => {
     try {
-      const d = await fetchExportDataset();
+      const d = await fetchExportDataset(bid!);
       exportDatasetToExcel(d);
       toast({ title: 'Excel exported', description: 'Check your downloads folder.' });
     } catch (e) {
@@ -58,7 +58,7 @@ export default function DataManagement() {
 
   const handlePdf = () => run('pdf', async () => {
     try {
-      const d = await fetchExportDataset();
+      const d = await fetchExportDataset(bid!);
       exportDatasetToPdf(d, 'Wood Trading Report');
       toast({ title: 'PDF exported', description: 'Check your downloads folder.' });
     } catch (e) {
@@ -68,7 +68,7 @@ export default function DataManagement() {
 
   const handleBackup = () => run('backup', async () => {
     try {
-      await exportBackup();
+      await exportBackup(bid!);
       toast({ title: 'Backup downloaded', description: 'Save this file safely.' });
     } catch (e) {
       toast({ title: 'Backup failed', description: String(e), variant: 'destructive' });
@@ -80,7 +80,7 @@ export default function DataManagement() {
     if (!file) return;
     setImporting(true);
     try {
-      await importBackup(file);
+      await importBackup(file, bid!);
       toast({ title: 'Backup restored', description: 'Reloading...' });
       setTimeout(() => window.location.reload(), 800);
     } catch (err) {
@@ -91,7 +91,7 @@ export default function DataManagement() {
 
   const handleClear = () => run('clear', async () => {
     try {
-      await clearAllData();
+      await clearAllData(bid!);
       toast({ title: 'All data cleared' });
       setTimeout(() => window.location.reload(), 600);
     } catch (e) {
@@ -101,7 +101,7 @@ export default function DataManagement() {
 
   const handleCloseMonth = () => run('close', async () => {
     try {
-      const r = await closeMonth();
+      const r = await closeMonth(bid!);
       toast({
         title: `${r.periodLabel} archived`,
         description: 'Excel + PDF downloaded. Transactions reset; outstanding kept.',
