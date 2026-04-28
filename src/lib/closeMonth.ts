@@ -17,20 +17,20 @@ function map<T>(rows: unknown[] | null, fn: (r: Record<string, unknown>) => T): 
   return (rows ?? []).map(r => fn(r as Record<string, unknown>));
 }
 
-export async function fetchExportDataset(): Promise<ExportDataset> {
+export async function fetchExportDataset(businessId: string): Promise<ExportDataset> {
   const [
     sawmills, parties, purchases, sales, expenses,
     pr, pm, withdrawals, settings,
   ] = await Promise.all([
-    supabase.from('sawmills').select('*'),
-    supabase.from('parties').select('*'),
-    supabase.from('purchases').select('*'),
-    supabase.from('sales').select('*'),
-    supabase.from('expenses').select('*'),
-    supabase.from('payments_received').select('*'),
-    supabase.from('payments_made').select('*'),
-    supabase.from('withdrawals').select('*'),
-    supabase.from('settings').select('sunny_pct,partner_pct').eq('id', 1).maybeSingle(),
+    supabase.from('sawmills').select('*').eq('business_id', businessId),
+    supabase.from('parties').select('*').eq('business_id', businessId),
+    supabase.from('purchases').select('*').eq('business_id', businessId),
+    supabase.from('sales').select('*').eq('business_id', businessId),
+    supabase.from('expenses').select('*').eq('business_id', businessId),
+    supabase.from('payments_received').select('*').eq('business_id', businessId),
+    supabase.from('payments_made').select('*').eq('business_id', businessId),
+    supabase.from('withdrawals').select('*').eq('business_id', businessId),
+    supabase.from('settings').select('sunny_pct,partner_pct').eq('business_id', businessId).maybeSingle(),
   ]);
 
   return {
@@ -103,8 +103,8 @@ export interface CloseMonthResult {
  * Archives current dataset to monthly_archives, downloads Excel + PDF copies,
  * then clears transactions while preserving outstanding as opening entries.
  */
-export async function closeMonth(): Promise<CloseMonthResult> {
-  const dataset = await fetchExportDataset();
+export async function closeMonth(businessId: string): Promise<CloseMonthResult> {
+  const dataset = await fetchExportDataset(businessId);
   const now = new Date();
   const periodLabel = now.toLocaleString('en-IN', { month: 'long', year: 'numeric' });
   const periodStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
@@ -129,6 +129,7 @@ export async function closeMonth(): Promise<CloseMonthResult> {
   const { data: archive, error: archiveErr } = await supabase
     .from('monthly_archives')
     .insert({
+      business_id: businessId,
       period_label: periodLabel,
       period_start: periodStart,
       period_end: periodEnd,
@@ -145,15 +146,16 @@ export async function closeMonth(): Promise<CloseMonthResult> {
   exportDatasetToPdf(dataset, `Monthly Report — ${periodLabel}`, `wood-trading-${safeLabel}.pdf`);
 
   // Reset transactions (preserves outstanding as opening entries)
-  await clearMonthlyTransactions();
+  await clearMonthlyTransactions(businessId);
 
   return { archiveId: archive.id, periodLabel };
 }
 
-export async function listArchives() {
+export async function listArchives(businessId: string) {
   const { data, error } = await supabase
     .from('monthly_archives')
     .select('id, period_label, period_start, period_end, totals, created_at')
+    .eq('business_id', businessId)
     .order('created_at', { ascending: false });
   if (error) throw error;
   return data ?? [];
