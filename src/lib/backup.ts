@@ -89,7 +89,7 @@ export async function importBackup(file: File, businessId: string): Promise<void
 export async function clearAllData(businessId: string): Promise<void> {
   const order = [
     'payments_made', 'payments_received', 'withdrawals',
-    'expenses', 'sales', 'purchases', 'parties', 'sawmills',
+    'expenses', 'sales', 'purchases', 'parties', 'sawmills', 'partners',
   ] as const;
   for (const t of order) {
     const { error } = await supabase.from(t).delete().eq('business_id', businessId);
