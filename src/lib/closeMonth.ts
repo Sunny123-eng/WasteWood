@@ -129,8 +129,12 @@ export async function closeMonth(businessId: string): Promise<CloseMonthResult> 
 
   const totals = {
     totalSales, totalPurchases, totalExpenses, netProfit,
-    sunnyShare: netProfit * dataset.settings.sunnyPercent / 100,
-    partnerShare: netProfit * dataset.settings.partnerPercent / 100,
+    partnerShares: dataset.partners.map(p => ({
+      id: p.id,
+      name: p.partnerName,
+      sharePct: Number(p.profitSharePercentage),
+      share: netProfit * Number(p.profitSharePercentage || 0) / 100,
+    })),
     counts: {
       sales: dataset.sales.length, purchases: dataset.purchases.length,
       expenses: dataset.expenses.length, paymentsReceived: dataset.paymentsReceived.length,
