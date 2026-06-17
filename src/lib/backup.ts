@@ -2,7 +2,7 @@ import { saveAs } from 'file-saver';
 import { supabase } from '@/integrations/supabase/client';
 
 const TABLES = [
-  'sawmills', 'parties', 'purchases', 'sales', 'expenses',
+  'sawmills', 'parties', 'partners', 'purchases', 'sales', 'expenses',
   'payments_received', 'payments_made', 'withdrawals',
 ] as const;
 
