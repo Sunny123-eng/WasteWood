@@ -4,7 +4,7 @@ import { z } from 'zod';
 import { useStore } from '@/hooks/useStore';
 import { useBalances } from '@/hooks/useBalances';
 import { todayString } from '@/lib/format';
-import type { Expense, Sale, Purchase } from '@/types';
+import type { Expense, Sale, Purchase, Partner } from '@/types';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -17,7 +17,8 @@ const schema = z.object({
   date: z.string().min(1, 'Required'),
   description: z.string().min(1, 'Required'),
   amount: z.coerce.number().positive('Must be > 0'),
-  paidBy: z.enum(['business', 'sunny', 'partner']),
+  /** `'business'` or a Partner UUID */
+  paidBy: z.string().min(1, 'Required'),
   paymentMode: z.enum(['cash', 'bank']),
   linkedVehicle: z.string().optional(),
 });
@@ -28,6 +29,7 @@ export default function ExpenseForm() {
   const { items: expenses, add } = useStore<Expense>('ww_expenses');
   const { items: sales } = useStore<Sale>('ww_sales');
   const { items: purchases } = useStore<Purchase>('ww_purchases');
+  const { items: partners } = useStore<Partner>('ww_partners');
   const { updateBalance } = useBalances();
   const navigate = useNavigate();
 
@@ -82,8 +84,9 @@ export default function ExpenseForm() {
                 <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
                 <SelectContent>
                   <SelectItem value="business">Business</SelectItem>
-                  <SelectItem value="sunny">Sunny</SelectItem>
-                  <SelectItem value="partner">Partner</SelectItem>
+                  {partners.map(p => (
+                    <SelectItem key={p.id} value={p.id}>{p.partnerName}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select><FormMessage />
             </FormItem>

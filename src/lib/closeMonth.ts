@@ -10,7 +10,7 @@ import { clearMonthlyTransactions } from './backup';
 import * as XLSX from 'xlsx';
 import type {
   Purchase, Sale, Expense, PaymentReceived, PaymentMade,
-  Withdrawal, Sawmill, Party,
+  Withdrawal, Sawmill, Party, Partner,
 } from '@/types';
 
 function map<T>(rows: unknown[] | null, fn: (r: Record<string, unknown>) => T): T[] {
@@ -20,7 +20,7 @@ function map<T>(rows: unknown[] | null, fn: (r: Record<string, unknown>) => T): 
 export async function fetchExportDataset(businessId: string): Promise<ExportDataset> {
   const [
     sawmills, parties, purchases, sales, expenses,
-    pr, pm, withdrawals, settings,
+    pr, pm, withdrawals, partners, settings,
   ] = await Promise.all([
     supabase.from('sawmills').select('*').eq('business_id', businessId),
     supabase.from('parties').select('*').eq('business_id', businessId),
@@ -30,6 +30,7 @@ export async function fetchExportDataset(businessId: string): Promise<ExportData
     supabase.from('payments_received').select('*').eq('business_id', businessId),
     supabase.from('payments_made').select('*').eq('business_id', businessId),
     supabase.from('withdrawals').select('*').eq('business_id', businessId),
+    supabase.from('partners').select('*').eq('business_id', businessId),
     supabase.from('settings').select('sunny_pct,partner_pct').eq('business_id', businessId).maybeSingle(),
   ]);
 

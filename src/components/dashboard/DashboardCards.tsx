@@ -1,12 +1,11 @@
 import { Card, CardContent } from '@/components/ui/card';
 import { useBalances } from '@/hooks/useBalances';
 import { useStore } from '@/hooks/useStore';
-import { useDataStore } from '@/hooks/useDataStore';
 import { formatCurrency, todayString } from '@/lib/format';
-import type { Purchase, Sale, Expense, PaymentReceived, PaymentMade } from '@/types';
+import type { Purchase, Sale, Expense, PaymentReceived, PaymentMade, Partner } from '@/types';
 import {
   Wallet, Landmark, ShoppingCart, TrendingUp, Receipt, CreditCard,
-  IndianRupee, UserCircle2, Users,
+  IndianRupee, Users,
 } from 'lucide-react';
 import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -18,7 +17,7 @@ export default function DashboardCards() {
   const { items: expenses } = useStore<Expense>('ww_expenses');
   const { items: paymentsReceived } = useStore<PaymentReceived>('ww_payments_received');
   const { items: paymentsMade } = useStore<PaymentMade>('ww_payments_made');
-  const { settings } = useDataStore();
+  const { items: partners } = useStore<Partner>('ww_partners');
   const navigate = useNavigate();
 
   const today = todayString();
@@ -31,8 +30,11 @@ export default function DashboardCards() {
   const totalExpenses = expenses.reduce((a, e) => a + e.amount, 0);
   const netProfit = totalSales - totalPurchases - totalExpenses;
 
-  const sunnyShare = netProfit * settings.sunnyPercent / 100;
-  const partnerShare = netProfit * settings.partnerPercent / 100;
+  const partnerShares = partners.map(p => ({
+    id: p.id,
+    name: p.partnerName,
+    share: netProfit * Number(p.profitSharePercentage || 0) / 100,
+  }));
 
   const { totalReceivable, totalPayable } = useMemo(() => {
     const creditSalesByParty = new Map<string, number>();
@@ -112,8 +114,13 @@ export default function DashboardCards() {
       </Section>
 
       <Section title="Partner Shares">
-        {renderCard({ label: 'Sunny Share', value: sunnyShare, icon: UserCircle2, color: 'text-primary', onClick: () => navigate('/profit') })}
-        {renderCard({ label: 'Partner Share', value: partnerShare, icon: Users, color: 'text-accent', onClick: () => navigate('/profit') })}
+        {partnerShares.length === 0
+          ? renderCard({ label: 'Add Partners', value: 0, icon: Users, color: 'text-muted-foreground', onClick: () => navigate('/partners') })
+          : partnerShares.map(p => renderCard({
+              label: p.name, value: p.share, icon: Users,
+              color: p.share >= 0 ? 'text-primary' : 'text-destructive',
+              onClick: () => navigate('/profit'),
+            }))}
       </Section>
 
       <Section title="Outstanding">

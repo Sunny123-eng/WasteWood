@@ -12,8 +12,25 @@ export interface Party {
   createdAt: string;
 }
 
+export interface Partner {
+  id: string;
+  partnerName: string;
+  mobile?: string;
+  email?: string;
+  profitSharePercentage: number;
+  investmentAmount: number;
+  notes?: string;
+  isOwner?: boolean;
+  createdAt: string;
+}
+
 export type PaymentMode = 'cash' | 'bank' | 'credit';
-export type PaidBy = 'business' | 'sunny' | 'partner';
+/**
+ * Expense "Paid By" / Withdrawal "Person" stores either the literal string
+ * `'business'` or a Partner UUID. Kept as plain string so the dynamic partner
+ * list works without enum churn.
+ */
+export type PaidBy = string;
 
 export interface Purchase {
   id: string;
@@ -49,6 +66,7 @@ export interface Expense {
   date: string;
   description: string;
   amount: number;
+  /** `'business'` or a Partner UUID */
   paidBy: PaidBy;
   paymentMode: 'cash' | 'bank';
   linkedVehicle?: string;
@@ -85,7 +103,8 @@ export interface Balances {
 export interface Withdrawal {
   id: string;
   date: string;
-  person: 'sunny' | 'partner';
+  /** Partner UUID */
+  person: string;
   amount: number;
   source: 'cash' | 'bank';
   notes?: string;
@@ -93,6 +112,7 @@ export interface Withdrawal {
 }
 
 export interface AppSettings {
+  /** Legacy — kept for backwards compatibility with the settings row. */
   sunnyPercent: number;
   partnerPercent: number;
 }

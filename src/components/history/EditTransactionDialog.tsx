@@ -9,7 +9,7 @@ import { useStore } from '@/hooks/useStore';
 import { useBalances } from '@/hooks/useBalances';
 import type {
   Purchase, Sale, Expense, PaymentReceived, PaymentMade, Withdrawal,
-  Sawmill, Party, PaymentMode, PaidBy,
+  Sawmill, Party, PaymentMode, Partner,
 } from '@/types';
 import {
   Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle,
@@ -43,6 +43,7 @@ export default function EditTransactionDialog<T extends AnyTxn>({
   const { updateBalance } = useBalances();
   const { items: sawmills } = useStore<Sawmill>('ww_sawmills');
   const { items: parties } = useStore<Party>('ww_parties');
+  const { items: partners } = useStore<Partner>('ww_partners');
 
   // Local form state — initialised from the item.
   const [form, setForm] = useState<Record<string, unknown>>(() => ({ ...item }));
@@ -220,12 +221,11 @@ export default function EditTransactionDialog<T extends AnyTxn>({
                   onChange={e => setField('amount', Number(e.target.value))} /></div>
               <div>
                 <Label className="text-xs">Paid By</Label>
-                <Select value={String(form.paidBy ?? 'business')} onValueChange={v => setField('paidBy', v as PaidBy)}>
+                <Select value={String(form.paidBy ?? 'business')} onValueChange={v => setField('paidBy', v)}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="business">Business</SelectItem>
-                    <SelectItem value="sunny">Sunny</SelectItem>
-                    <SelectItem value="partner">Partner</SelectItem>
+                    {partners.map(p => <SelectItem key={p.id} value={p.id}>{p.partnerName}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
@@ -277,12 +277,11 @@ export default function EditTransactionDialog<T extends AnyTxn>({
           {storeKey === 'ww_withdrawals' && (
             <>
               <div>
-                <Label className="text-xs">Person</Label>
-                <Select value={String(form.person ?? 'sunny')} onValueChange={v => setField('person', v)}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                <Label className="text-xs">Partner</Label>
+                <Select value={String(form.person ?? '')} onValueChange={v => setField('person', v)}>
+                  <SelectTrigger><SelectValue placeholder="Select partner" /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="sunny">Sunny</SelectItem>
-                    <SelectItem value="partner">Partner</SelectItem>
+                    {partners.map(p => <SelectItem key={p.id} value={p.id}>{p.partnerName}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>

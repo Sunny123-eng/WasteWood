@@ -26,6 +26,7 @@ import VehicleProfit from "./pages/VehicleProfit";
 import DataManagement from "./pages/DataManagement";
 import SuperAdminBusinesses from "./pages/SuperAdminBusinesses";
 import BusinessUsers from "./pages/BusinessUsers";
+import PartnersManagement from "./pages/PartnersManagement";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -59,6 +60,7 @@ const App = () => (
                 <Route path="/data" element={<ProtectedRoute adminOnly><DataManagement /></ProtectedRoute>} />
                 <Route path="/admin/businesses" element={<ProtectedRoute superAdminOnly><SuperAdminBusinesses /></ProtectedRoute>} />
                 <Route path="/business/users" element={<ProtectedRoute adminOnly><BusinessUsers /></ProtectedRoute>} />
+                <Route path="/partners" element={<PartnersManagement />} />
               </Route>
               <Route path="*" element={<NotFound />} />
             </Routes>
