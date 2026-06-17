@@ -3,6 +3,12 @@ import autoTable from 'jspdf-autotable';
 import { saveAs } from 'file-saver';
 import { formatCurrency as formatINR } from './format';
 import type { ExportDataset } from './excelExport';
+import type { Partner } from '@/types';
+
+function partnerNameFor(partners: Partner[], id: string): string {
+  if (id === 'business') return 'Business';
+  return partners.find(p => p.id === id)?.partnerName ?? id;
+}
 
 export function exportDatasetToPdf(d: ExportDataset, title: string, filename?: string): void {
   const doc = new jsPDF();
@@ -16,17 +22,21 @@ export function exportDatasetToPdf(d: ExportDataset, title: string, filename?: s
   const totalExpenses = d.expenses.reduce((a, e) => a + e.amount, 0);
   const netProfit = totalSales - totalPurchases - totalExpenses;
 
+  const summary: (string | number)[][] = [
+    ['Total Sales', formatINR(totalSales)],
+    ['Total Purchases', formatINR(totalPurchases)],
+    ['Total Expenses', formatINR(totalExpenses)],
+    ['Net Profit', formatINR(netProfit)],
+  ];
+  d.partners.forEach(p => {
+    const share = netProfit * Number(p.profitSharePercentage || 0) / 100;
+    summary.push([`${p.partnerName} (${Number(p.profitSharePercentage).toFixed(2)}%)`, formatINR(share)]);
+  });
+
   autoTable(doc, {
     startY: 28,
     head: [['Metric', 'Amount']],
-    body: [
-      ['Total Sales', formatINR(totalSales)],
-      ['Total Purchases', formatINR(totalPurchases)],
-      ['Total Expenses', formatINR(totalExpenses)],
-      ['Net Profit', formatINR(netProfit)],
-      ['Sunny Share', formatINR(netProfit * d.settings.sunnyPercent / 100)],
-      ['Partner Share', formatINR(netProfit * d.settings.partnerPercent / 100)],
-    ],
+    body: summary,
     theme: 'grid',
     headStyles: { fillColor: [101, 67, 33] },
   });
@@ -46,7 +56,7 @@ export function exportDatasetToPdf(d: ExportDataset, title: string, filename?: s
     d.purchases.map(p => [p.date, p.sawmillName, p.quantity, p.rate, formatINR(p.amount), p.vehicleNumber, p.paymentMode]));
 
   addTable('Expenses', [['Date', 'Description', 'Amount', 'Paid By', 'Mode']],
-    d.expenses.map(e => [e.date, e.description, formatINR(e.amount), e.paidBy, e.paymentMode]));
+    d.expenses.map(e => [e.date, e.description, formatINR(e.amount), partnerNameFor(d.partners, e.paidBy), e.paymentMode]));
 
   addTable('Payments Received', [['Date', 'Party', 'Amount', 'Mode']],
     d.paymentsReceived.map(p => [p.date, p.partyName, formatINR(p.amount), p.paymentMode]));
@@ -54,8 +64,11 @@ export function exportDatasetToPdf(d: ExportDataset, title: string, filename?: s
   addTable('Payments Made', [['Date', 'Sawmill', 'Amount', 'Mode']],
     d.paymentsMade.map(p => [p.date, p.sawmillName, formatINR(p.amount), p.paymentMode]));
 
-  addTable('Withdrawals', [['Date', 'Person', 'Amount', 'Source']],
-    d.withdrawals.map(w => [w.date, w.person, formatINR(w.amount), w.source]));
+  addTable('Withdrawals', [['Date', 'Partner', 'Amount', 'Source']],
+    d.withdrawals.map(w => [w.date, partnerNameFor(d.partners, w.person), formatINR(w.amount), w.source]));
+
+  addTable('Partners', [['Name', 'Mobile', 'Share %', 'Investment']],
+    d.partners.map(p => [p.partnerName, p.mobile ?? '', Number(p.profitSharePercentage).toFixed(2), formatINR(Number(p.investmentAmount))]));
 
   const blob = doc.output('blob');
   const today = new Date().toISOString().split('T')[0];

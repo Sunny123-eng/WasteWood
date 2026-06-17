@@ -2,7 +2,7 @@ import { saveAs } from 'file-saver';
 import { supabase } from '@/integrations/supabase/client';
 
 const TABLES = [
-  'sawmills', 'parties', 'purchases', 'sales', 'expenses',
+  'sawmills', 'parties', 'partners', 'purchases', 'sales', 'expenses',
   'payments_received', 'payments_made', 'withdrawals',
 ] as const;
 
@@ -47,7 +47,7 @@ export async function importBackup(file: File, businessId: string): Promise<void
 
   const deleteOrder = [
     'payments_made', 'payments_received', 'withdrawals',
-    'expenses', 'sales', 'purchases', 'parties', 'sawmills',
+    'expenses', 'sales', 'purchases', 'parties', 'sawmills', 'partners',
   ] as const;
   for (const t of deleteOrder) {
     const { error } = await supabase.from(t).delete().eq('business_id', businessId);
@@ -55,7 +55,7 @@ export async function importBackup(file: File, businessId: string): Promise<void
   }
 
   const insertOrder = [
-    'sawmills', 'parties', 'purchases', 'sales', 'expenses',
+    'sawmills', 'parties', 'partners', 'purchases', 'sales', 'expenses',
     'payments_received', 'payments_made', 'withdrawals',
   ] as const;
   for (const t of insertOrder) {
@@ -89,7 +89,7 @@ export async function importBackup(file: File, businessId: string): Promise<void
 export async function clearAllData(businessId: string): Promise<void> {
   const order = [
     'payments_made', 'payments_received', 'withdrawals',
-    'expenses', 'sales', 'purchases', 'parties', 'sawmills',
+    'expenses', 'sales', 'purchases', 'parties', 'sawmills', 'partners',
   ] as const;
   for (const t of order) {
     const { error } = await supabase.from(t).delete().eq('business_id', businessId);

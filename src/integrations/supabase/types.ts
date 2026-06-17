@@ -237,6 +237,56 @@ export type Database = {
           },
         ]
       }
+      partners: {
+        Row: {
+          business_id: string
+          created_at: string
+          email: string | null
+          id: string
+          investment_amount: number
+          is_owner: boolean
+          mobile: string | null
+          notes: string | null
+          partner_name: string
+          profit_share_percentage: number
+          updated_at: string
+        }
+        Insert: {
+          business_id: string
+          created_at?: string
+          email?: string | null
+          id?: string
+          investment_amount?: number
+          is_owner?: boolean
+          mobile?: string | null
+          notes?: string | null
+          partner_name: string
+          profit_share_percentage?: number
+          updated_at?: string
+        }
+        Update: {
+          business_id?: string
+          created_at?: string
+          email?: string | null
+          id?: string
+          investment_amount?: number
+          is_owner?: boolean
+          mobile?: string | null
+          notes?: string | null
+          partner_name?: string
+          profit_share_percentage?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partners_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       payments_made: {
         Row: {
           amount: number

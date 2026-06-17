@@ -10,7 +10,7 @@ import { clearMonthlyTransactions } from './backup';
 import * as XLSX from 'xlsx';
 import type {
   Purchase, Sale, Expense, PaymentReceived, PaymentMade,
-  Withdrawal, Sawmill, Party,
+  Withdrawal, Sawmill, Party, Partner,
 } from '@/types';
 
 function map<T>(rows: unknown[] | null, fn: (r: Record<string, unknown>) => T): T[] {
@@ -20,7 +20,7 @@ function map<T>(rows: unknown[] | null, fn: (r: Record<string, unknown>) => T): 
 export async function fetchExportDataset(businessId: string): Promise<ExportDataset> {
   const [
     sawmills, parties, purchases, sales, expenses,
-    pr, pm, withdrawals, settings,
+    pr, pm, withdrawals, partners, settings,
   ] = await Promise.all([
     supabase.from('sawmills').select('*').eq('business_id', businessId),
     supabase.from('parties').select('*').eq('business_id', businessId),
@@ -30,6 +30,7 @@ export async function fetchExportDataset(businessId: string): Promise<ExportData
     supabase.from('payments_received').select('*').eq('business_id', businessId),
     supabase.from('payments_made').select('*').eq('business_id', businessId),
     supabase.from('withdrawals').select('*').eq('business_id', businessId),
+    supabase.from('partners').select('*').eq('business_id', businessId),
     supabase.from('settings').select('sunny_pct,partner_pct').eq('business_id', businessId).maybeSingle(),
   ]);
 
@@ -87,6 +88,17 @@ export async function fetchExportDataset(businessId: string): Promise<ExportData
       source: r.source as Withdrawal['source'],
       notes: (r.notes as string) ?? undefined, createdAt: r.created_at as string,
     })),
+    partners: map<Partner>(partners.data, r => ({
+      id: r.id as string,
+      partnerName: r.partner_name as string,
+      mobile: (r.mobile as string) ?? undefined,
+      email: (r.email as string) ?? undefined,
+      profitSharePercentage: Number(r.profit_share_percentage),
+      investmentAmount: Number(r.investment_amount),
+      notes: (r.notes as string) ?? undefined,
+      isOwner: Boolean(r.is_owner),
+      createdAt: r.created_at as string,
+    })),
     settings: {
       sunnyPercent: Number(settings.data?.sunny_pct ?? 50),
       partnerPercent: Number(settings.data?.partner_pct ?? 50),
@@ -117,8 +129,12 @@ export async function closeMonth(businessId: string): Promise<CloseMonthResult> 
 
   const totals = {
     totalSales, totalPurchases, totalExpenses, netProfit,
-    sunnyShare: netProfit * dataset.settings.sunnyPercent / 100,
-    partnerShare: netProfit * dataset.settings.partnerPercent / 100,
+    partnerShares: dataset.partners.map(p => ({
+      id: p.id,
+      name: p.partnerName,
+      sharePct: Number(p.profitSharePercentage),
+      share: netProfit * Number(p.profitSharePercentage || 0) / 100,
+    })),
     counts: {
       sales: dataset.sales.length, purchases: dataset.purchases.length,
       expenses: dataset.expenses.length, paymentsReceived: dataset.paymentsReceived.length,

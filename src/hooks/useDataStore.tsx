@@ -15,13 +15,13 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import type {
   Sawmill, Party, Purchase, Sale, Expense,
-  PaymentReceived, PaymentMade, Withdrawal, Balances, AppSettings,
+  PaymentReceived, PaymentMade, Withdrawal, Balances, AppSettings, Partner,
 } from '@/types';
 import { toast } from 'sonner';
 
 export type StoreKey =
   | 'ww_sawmills' | 'ww_parties' | 'ww_purchases' | 'ww_sales' | 'ww_expenses'
-  | 'ww_payments_received' | 'ww_payments_made' | 'ww_withdrawals';
+  | 'ww_payments_received' | 'ww_payments_made' | 'ww_withdrawals' | 'ww_partners';
 
 const KEY_TO_TABLE: Record<StoreKey, string> = {
   ww_sawmills: 'sawmills',
@@ -32,6 +32,7 @@ const KEY_TO_TABLE: Record<StoreKey, string> = {
   ww_payments_received: 'payments_received',
   ww_payments_made: 'payments_made',
   ww_withdrawals: 'withdrawals',
+  ww_partners: 'partners',
 };
 
 // Tables where business_user role is allowed to insert (transactions only)
@@ -40,9 +41,9 @@ const USER_INSERTABLE: Set<StoreKey> = new Set([
   'ww_payments_received', 'ww_payments_made',
 ]);
 
-// Tables that require business_admin (master data, withdrawals)
+// Tables that require business_admin (master data, withdrawals, partners)
 const ADMIN_ONLY_INSERT: Set<StoreKey> = new Set([
-  'ww_sawmills', 'ww_parties', 'ww_withdrawals',
+  'ww_sawmills', 'ww_parties', 'ww_withdrawals', 'ww_partners',
 ]);
 
 type FieldMap = Record<string, string>;
@@ -72,6 +73,13 @@ const FIELD_MAPS: Record<StoreKey, FieldMap> = {
     paymentMode: 'payment_mode', createdAt: 'created_at',
   },
   ww_withdrawals: { createdAt: 'created_at' },
+  ww_partners: {
+    partnerName: 'partner_name',
+    profitSharePercentage: 'profit_share_percentage',
+    investmentAmount: 'investment_amount',
+    isOwner: 'is_owner',
+    createdAt: 'created_at',
+  },
 };
 
 function toDb(key: StoreKey, app: Record<string, unknown>): Record<string, unknown> {
@@ -104,6 +112,7 @@ interface DataState {
   ww_payments_received: PaymentReceived[];
   ww_payments_made: PaymentMade[];
   ww_withdrawals: Withdrawal[];
+  ww_partners: Partner[];
   balances: Balances;
   settings: AppSettings;
   loading: boolean;
@@ -124,7 +133,7 @@ const Ctx = createContext<DataCtx | null>(null);
 const EMPTY: DataState = {
   ww_sawmills: [], ww_parties: [], ww_purchases: [], ww_sales: [],
   ww_expenses: [], ww_payments_received: [], ww_payments_made: [],
-  ww_withdrawals: [],
+  ww_withdrawals: [], ww_partners: [],
   balances: { cash: 0, bank: 0 },
   settings: { sunnyPercent: 50, partnerPercent: 50 },
   loading: true,

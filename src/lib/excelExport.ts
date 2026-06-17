@@ -2,7 +2,7 @@ import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 import type {
   Purchase, Sale, Expense, PaymentReceived, PaymentMade,
-  Withdrawal, Sawmill, Party, AppSettings,
+  Withdrawal, Sawmill, Party, AppSettings, Partner,
 } from '@/types';
 
 export interface ExportDataset {
@@ -14,11 +14,17 @@ export interface ExportDataset {
   withdrawals: Withdrawal[];
   sawmills: Sawmill[];
   parties: Party[];
+  partners: Partner[];
   settings: AppSettings;
 }
 
 function sheetFrom(rows: Record<string, unknown>[]): XLSX.WorkSheet {
   return XLSX.utils.json_to_sheet(rows.length ? rows : [{}]);
+}
+
+function partnerNameFor(partners: Partner[], id: string): string {
+  if (id === 'business') return 'Business';
+  return partners.find(p => p.id === id)?.partnerName ?? id;
 }
 
 export function buildWorkbook(d: ExportDataset): XLSX.WorkBook {
@@ -38,7 +44,8 @@ export function buildWorkbook(d: ExportDataset): XLSX.WorkBook {
 
   XLSX.utils.book_append_sheet(wb, sheetFrom(d.expenses.map(e => ({
     Date: e.date, Description: e.description, Amount: e.amount,
-    PaidBy: e.paidBy, PaymentMode: e.paymentMode, LinkedVehicle: e.linkedVehicle ?? '',
+    PaidBy: partnerNameFor(d.partners, e.paidBy),
+    PaymentMode: e.paymentMode, LinkedVehicle: e.linkedVehicle ?? '',
   }))), 'Expenses');
 
   XLSX.utils.book_append_sheet(wb, sheetFrom([
@@ -84,8 +91,8 @@ export function buildWorkbook(d: ExportDataset): XLSX.WorkBook {
   ]), 'Outstanding');
 
   XLSX.utils.book_append_sheet(wb, sheetFrom(d.withdrawals.map(w => ({
-    Date: w.date, Person: w.person, Amount: w.amount,
-    Source: w.source, Notes: w.notes ?? '',
+    Date: w.date, Partner: partnerNameFor(d.partners, w.person),
+    Amount: w.amount, Source: w.source, Notes: w.notes ?? '',
   }))), 'Withdrawals');
 
   const totalSales = d.sales.reduce((a, s) => a + s.amount, 0);
@@ -93,25 +100,37 @@ export function buildWorkbook(d: ExportDataset): XLSX.WorkBook {
   const totalExpenses = d.expenses.reduce((a, e) => a + e.amount, 0);
   const netProfit = totalSales - totalPurchases - totalExpenses;
 
-  const sunnyExp = d.expenses.filter(e => e.paidBy === 'sunny').reduce((a, e) => a + e.amount, 0);
-  const partnerExp = d.expenses.filter(e => e.paidBy === 'partner').reduce((a, e) => a + e.amount, 0);
-  const sunnyW = d.withdrawals.filter(w => w.person === 'sunny').reduce((a, w) => a + w.amount, 0);
-  const partnerW = d.withdrawals.filter(w => w.person === 'partner').reduce((a, w) => a + w.amount, 0);
-
-  XLSX.utils.book_append_sheet(wb, sheetFrom([
+  // Partner accounts — per partner share + expenses paid + withdrawals
+  const partnerRows: Record<string, unknown>[] = [
     { Metric: 'Total Sales', Value: totalSales },
     { Metric: 'Total Purchases', Value: totalPurchases },
     { Metric: 'Total Expenses', Value: totalExpenses },
     { Metric: 'Net Profit', Value: netProfit },
-    { Metric: 'Sunny %', Value: d.settings.sunnyPercent },
-    { Metric: 'Partner %', Value: d.settings.partnerPercent },
-    { Metric: 'Sunny Share', Value: netProfit * d.settings.sunnyPercent / 100 },
-    { Metric: 'Partner Share', Value: netProfit * d.settings.partnerPercent / 100 },
-    { Metric: 'Sunny Expenses Paid', Value: sunnyExp },
-    { Metric: 'Partner Expenses Paid', Value: partnerExp },
-    { Metric: 'Sunny Withdrawals', Value: sunnyW },
-    { Metric: 'Partner Withdrawals', Value: partnerW },
-  ]), 'Partner Accounts');
+  ];
+
+  d.partners.forEach(p => {
+    const pct = Number(p.profitSharePercentage || 0);
+    const share = netProfit * pct / 100;
+    const paidExp = d.expenses.filter(e => e.paidBy === p.id).reduce((a, e) => a + e.amount, 0);
+    const took = d.withdrawals.filter(w => w.person === p.id).reduce((a, w) => a + w.amount, 0);
+    partnerRows.push(
+      { Metric: `${p.partnerName} — Share %`, Value: pct },
+      { Metric: `${p.partnerName} — Profit Share`, Value: share },
+      { Metric: `${p.partnerName} — Investment`, Value: Number(p.investmentAmount) },
+      { Metric: `${p.partnerName} — Expenses Paid`, Value: paidExp },
+      { Metric: `${p.partnerName} — Withdrawals`, Value: took },
+      { Metric: `${p.partnerName} — Net Position`, Value: share + paidExp - took },
+    );
+  });
+
+  XLSX.utils.book_append_sheet(wb, sheetFrom(partnerRows), 'Partner Accounts');
+
+  XLSX.utils.book_append_sheet(wb, sheetFrom(d.partners.map(p => ({
+    Name: p.partnerName, Mobile: p.mobile ?? '', Email: p.email ?? '',
+    SharePct: Number(p.profitSharePercentage),
+    Investment: Number(p.investmentAmount),
+    Notes: p.notes ?? '',
+  }))), 'Partners');
 
   XLSX.utils.book_append_sheet(wb, sheetFrom(d.sawmills.map(s => ({
     Name: s.name, DefaultRate: s.defaultRate,
