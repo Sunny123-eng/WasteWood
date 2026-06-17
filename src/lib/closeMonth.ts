@@ -88,6 +88,17 @@ export async function fetchExportDataset(businessId: string): Promise<ExportData
       source: r.source as Withdrawal['source'],
       notes: (r.notes as string) ?? undefined, createdAt: r.created_at as string,
     })),
+    partners: map<Partner>(partners.data, r => ({
+      id: r.id as string,
+      partnerName: r.partner_name as string,
+      mobile: (r.mobile as string) ?? undefined,
+      email: (r.email as string) ?? undefined,
+      profitSharePercentage: Number(r.profit_share_percentage),
+      investmentAmount: Number(r.investment_amount),
+      notes: (r.notes as string) ?? undefined,
+      isOwner: Boolean(r.is_owner),
+      createdAt: r.created_at as string,
+    })),
     settings: {
       sunnyPercent: Number(settings.data?.sunny_pct ?? 50),
       partnerPercent: Number(settings.data?.partner_pct ?? 50),
