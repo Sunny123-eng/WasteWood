@@ -5,7 +5,7 @@ import { formatCurrency, todayString } from '@/lib/format';
 import type { Purchase, Sale, Expense, PaymentReceived, PaymentMade, Partner } from '@/types';
 import {
   Wallet, Landmark, ShoppingCart, TrendingUp, Receipt, CreditCard,
-  IndianRupee, Users,
+  IndianRupee, Users, Scale, AlertTriangle,
 } from 'lucide-react';
 import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -87,11 +87,31 @@ export default function DashboardCards() {
     </Card>
   );
 
+  const capitalInHand = balances.cash + balances.bank;
+  const netCapital = capitalInHand + totalReceivable - totalPayable;
+
   return (
     <div className="space-y-5">
       <Section title="Balances">
-        {renderCard({ label: 'Cash Balance', value: balances.cash, icon: Wallet, color: 'text-primary' })}
-        {renderCard({ label: 'Bank Balance', value: balances.bank, icon: Landmark, color: 'text-accent' })}
+        {renderCard({ label: 'Cash Balance', value: balances.cash, icon: Wallet, color: 'text-primary', onClick: () => navigate('/books') })}
+        {renderCard({ label: 'Bank Balance', value: balances.bank, icon: Landmark, color: 'text-accent', onClick: () => navigate('/books') })}
+      </Section>
+
+      <Section title="Capital">
+        {renderCard({
+          label: capitalInHand >= 0 ? 'Capital in Hand' : 'Borrowed (Cash+Bank)',
+          value: capitalInHand,
+          icon: capitalInHand >= 0 ? Scale : AlertTriangle,
+          color: capitalInHand >= 0 ? 'text-success' : 'text-destructive',
+          onClick: () => navigate('/books'),
+        })}
+        {renderCard({
+          label: netCapital >= 0 ? 'Net Capital Position' : 'Net Borrowed',
+          value: netCapital,
+          icon: netCapital >= 0 ? Scale : AlertTriangle,
+          color: netCapital >= 0 ? 'text-success' : 'text-destructive',
+          onClick: () => navigate('/outstanding'),
+        })}
       </Section>
 
       <Section title="Today">

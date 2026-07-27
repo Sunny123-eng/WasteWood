@@ -27,6 +27,7 @@ import DataManagement from "./pages/DataManagement";
 import SuperAdminBusinesses from "./pages/SuperAdminBusinesses";
 import BusinessUsers from "./pages/BusinessUsers";
 import PartnersManagement from "./pages/PartnersManagement";
+import CashBankBook from "./pages/CashBankBook";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -61,6 +62,7 @@ const App = () => (
                 <Route path="/admin/businesses" element={<ProtectedRoute superAdminOnly><SuperAdminBusinesses /></ProtectedRoute>} />
                 <Route path="/business/users" element={<ProtectedRoute adminOnly><BusinessUsers /></ProtectedRoute>} />
                 <Route path="/partners" element={<PartnersManagement />} />
+                <Route path="/books" element={<CashBankBook />} />
               </Route>
               <Route path="*" element={<NotFound />} />
             </Routes>

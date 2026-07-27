@@ -3,12 +3,13 @@ import PartyList from '@/components/master/PartyList';
 import { Separator } from '@/components/ui/separator';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
-import { ArrowDownLeft, ArrowUpRight, Clock, CreditCard, Wallet, PieChart, Database, Truck, BookOpen, Crown, Users, UserCog } from 'lucide-react';
+import { ArrowDownLeft, ArrowUpRight, Clock, CreditCard, Wallet, PieChart, Database, Truck, BookOpen, Crown, Users, UserCog, BookText } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 
 const quickLinks = [
   { label: 'Payment Received', icon: ArrowDownLeft, path: '/payment-received', color: 'text-success', adminOnly: true },
   { label: 'Payment Made', icon: ArrowUpRight, path: '/payment-made', color: 'text-destructive', adminOnly: true },
+  { label: 'Cash & Bank Book', icon: BookText, path: '/books', color: 'text-primary' },
   { label: 'Outstanding', icon: CreditCard, path: '/outstanding', color: 'text-primary' },
   { label: 'Ledgers', icon: BookOpen, path: '/ledgers', color: 'text-primary' },
   { label: 'History', icon: Clock, path: '/history', color: 'text-accent' },
